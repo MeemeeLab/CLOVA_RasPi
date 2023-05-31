@@ -13,6 +13,7 @@ from clova.processor.skill.datetime import DateTimeSkillProvider
 
 from clova.general.queue import global_speech_queue
 from clova.config.config import global_config_prov
+from clova.config.character import global_character_prov, GLOBAL_CHARACTER_CONFIG_PROMPT
 from clova.io.local.led import global_led_Ill
 
 from clova.general.logger import BaseLogger
@@ -66,22 +67,38 @@ class ConversationController(BaseLogger):
 
         # スキル
         for skill in self.SKILL_MODULES:
-            result = skill.try_get_answer(prompt)
+            result = skill.try_get_answer(prompt, not self.provider.supports_prompt_skill())
             if result:
                 return result
 
         # どれにも該当しないときには AI に任せる。
         kwargs = global_config_prov.get_general_config()["apis"]["conversation"]["params"]
 
+        if self.provider.supports_prompt_skill():
+            actual_prompt = global_character_prov.get_character_prompt() + "\n" + GLOBAL_CHARACTER_CONFIG_PROMPT + "\n"
+            actual_prompt = actual_prompt.replace("{SKILL_LIST}", "\n".join(list(map(lambda skill: skill.get_prompt_addition(), self.SKILL_MODULES))))
+            actual_prompt = actual_prompt.replace("{STT_RESULT}", prompt) + "\n"
+        else:
+            actual_prompt = global_character_prov.get_character_prompt() + "\n" + prompt + "\n"
+
+        self.log("get_answer", "actual_prompt: {}".format(actual_prompt))
+
         # 底面 LED をピンクに
         global_led_Ill.set_all(global_led_Ill.RGB_PINK)
 
-        result = self.provider.get_answer(prompt, **kwargs)
-        if result:
-            return result
+        result = self.provider.get_answer(actual_prompt, **kwargs)
 
-        # AI が利用不可の場合は謝るしかない…
-        return "すみません。質問が理解できませんでした。"
+        if not result:
+            # AI が利用不可の場合は謝るしかない…
+            return "すみません。質問が理解できませんでした。"
+
+        # スキル (post process)
+        for skill in self.SKILL_MODULES:
+            response = skill.try_get_answer_post_process(result)
+            if response:
+                return response
+
+        return result
 
 # ==================================
 #       本クラスのテスト用処理

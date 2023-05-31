@@ -41,37 +41,25 @@ class NewsSkillProvider(BaseSkillProvider, BaseLogger):
     def __del__(self):
         super().__del__()
 
+    def get_prompt_addition(self) -> str:
+        return "NewsSkillProvider: これは最新のニュースを返答するスキルです。 フォーマット: `CALL_NEWS <トップ|国内|国際|ビジネス|エンタメ|スポーツ|科学|地域|コンピュータ|インターネット|社会>`"
+
     # ニュース 質問に答える。ニュースの問い合わせではなければ None を返す
-    def try_get_answer(self, request_text):
+    def try_get_answer(self, request_text, use_stub):
         # 前回がニュースで無ければ
         if (self._news_count == 0):
+            if not use_stub:
+                # 新スキルコードをサポートしている場合、前処理しない
+                # Bardはかなり頭が悪いので新スキルコードを使えない
+                return None
+
+            self.log("try_get_answer", "stub! expect unreliable response from skill")
+
             match = re.match("(.+)ニュース.*教えて", request_text)
             if match is not None:
                 category = match.group(1)
                 if category in CATEGORY_URL_TABLE:
-                    url = CATEGORY_URL_TABLE[category]
-                    self.log("try_get_answer", "Getting {} News!!".format(category))
-                    response = requests.get(url)
-                    soup = BeautifulSoup(response.content, "html.parser")
-
-                    news_list = soup.find_all(href=re.compile("news.yahoo.co.jp/pickup"))
-                    news_headlines = "以下のニュースがあります。"
-
-                    elements = soup.find_all(href=re.compile("news.yahoo.co.jp/pickup"))
-                    num = 1
-                    for element in elements:
-                        # ニューステキスト
-                        news_text = element.getText()
-                        # 後で、番号を指定するとニュースを読み上げる様に拡張するために LINK も保存しておく
-                        # link = element.attrs["href"]
-                        news_headlines += "{}. {}".format(str(num), news_text) + "\n"
-                        num += 1
-                    self.log("try_get_answer", news_headlines)
-                    self._news_count = num - 1
-                    self._news_list = news_list
-                    news_headlines += "詳細を知りたい番号を1から{}で選んでください。\n".format(str(self._news_count))
-
-                    return news_headlines
+                    return self._start(category)
                 else:
                     answer_text = "ニュースのカテゴリーを認識できませんでした。"
                     self.log("try_get_answer", "No Category for NEWS")
@@ -122,6 +110,37 @@ class NewsSkillProvider(BaseSkillProvider, BaseLogger):
                 else:
                     answer_text = "番号が不正または範囲外です。\n詳細を知りたい番号を1から{}で選んでください。\n終了するには終わりと言ってください。".format(str(self._news_count))
                     return answer_text
+
+    def _start(self, category):
+        url = CATEGORY_URL_TABLE[category]
+        self.log("_start", "Getting {} News!!".format(category))
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        news_list = soup.find_all(href=re.compile("news.yahoo.co.jp/pickup"))
+        news_headlines = "以下のニュースがあります。"
+
+        elements = soup.find_all(href=re.compile("news.yahoo.co.jp/pickup"))
+        num = 1
+        for element in elements:
+            # ニューステキスト
+            news_text = element.getText()
+            # 後で、番号を指定するとニュースを読み上げる様に拡張するために LINK も保存しておく
+            # link = element.attrs["href"]
+            news_headlines += "{}. {}".format(str(num), news_text) + "\n"
+            num += 1
+        self.log("_start", news_headlines)
+        self._news_count = num - 1
+        self._news_list = news_list
+        news_headlines += "詳細を知りたい番号を1から{}で選んでください。\n".format(str(self._news_count))
+
+        return news_headlines
+
+    def try_get_answer_post_process(self, response):
+        if response.startswith("CALL_NEWS"):
+            args = response.split("\n")[0].split(" ")
+            return self._start(args[1])
+
 
 # ==================================
 #       本クラスのテスト用処理

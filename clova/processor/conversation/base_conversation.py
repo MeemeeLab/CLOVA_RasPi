@@ -8,5 +8,9 @@ class BaseConversationProvider(ABC):
         pass
 
     @abstractmethod
+    def supports_prompt_skill(self) -> bool:
+        pass
+
+    @abstractmethod
     def get_answer(self, prompt, **kwargs) -> Union[str, None]:
         pass

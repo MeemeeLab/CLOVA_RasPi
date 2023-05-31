@@ -1,7 +1,6 @@
 import os
 import openai
 
-from clova.config.character import global_character_prov
 from clova.config.config import global_config_prov
 
 from clova.processor.conversation.base_conversation import BaseConversationProvider
@@ -30,11 +29,13 @@ class OpenAIChatGPTConversationProvider(BaseConversationProvider, BaseLogger):
     def set_persona(self, prompt):
         self._char_setting_str = self.OPENAI_CHARACTER_CONFIG + prompt
 
+    def supports_prompt_skill(self) -> bool:
+        return True
+
     def get_answer(self, prompt, **kwargs):
         openai.api_key = self.OPENAI_API_KEY
 
         self.log("get_answer", "OpenAI 応答作成中")
-        desc = global_character_prov.get_character_prompt()
 
         if (self.OPENAI_API_KEY != ""):
             try:
@@ -42,7 +43,7 @@ class OpenAIChatGPTConversationProvider(BaseConversationProvider, BaseLogger):
                 ai_response = openai.ChatCompletion.create(
                     model=kwargs["model"],
                     messages=[
-                        {"role": "system", "content": self._char_setting_str + desc},
+                        {"role": "system", "content": self._char_setting_str},
                         {"role": "user", "content": prompt},
                     ]
                 )

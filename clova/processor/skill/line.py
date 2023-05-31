@@ -123,7 +123,17 @@ class LineSkillProvider(BaseSkillProvider, BaseLogger):
 
         return found_id
 
-    def try_get_answer(self, request_text):
+    def get_prompt_addition(self) -> str:
+        return "LineSkillProvider: これはモバイルメッセンジャーアプリケーションの「LINE」を送信するスキルです。 フォーマット: `CALL_LINE [name] [message]`"
+
+    def try_get_answer(self, request_text, use_stub):
+        if not use_stub:
+            # 新スキルコードをサポートしている場合、前処理しない
+            # Bardはかなり頭が悪いので新スキルコードを使えない
+            return None
+
+        self.log("try_get_answer", "stub! expect unreliable response from skill")
+
         if ((("LINE" in request_text) or ("ライン" in request_text)) and (("送信して" in request_text) or ("送って" in request_text) or ("して" in request_text))):
             name_str = request_text.split("に")[0]
 
@@ -159,10 +169,24 @@ class LineSkillProvider(BaseSkillProvider, BaseLogger):
             self.log("try_get_answer", "No keyword for skill Line")
             return None
 
+    def try_get_answer_post_process(self, response):
+        if response.startswith("CALL_LINE"):
+            args = response.split("\n")[0].split(" ")
+
+            name_str = args[1]
+            message = args[2]
+
+            id = self.conv_call_name_to_id(name_str)
+            self.log("try_get_answer_post_process", "Send[LINE]>Id:{},Msg:{}".format(id, message))
+            self.send_message(id, message)
+
+            return "{} に {} とラインメッセージ送りました".format(name_str, message)
 
 # ==================================
 #      LINE HTTPハンドラクラス
 # ==================================
+
+
 class HttpReqLineHandler(http.server.BaseHTTPRequestHandler):
     line_recv = LineReceiver()
 

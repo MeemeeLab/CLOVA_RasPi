@@ -96,8 +96,18 @@ class WeatherSkillProvider(BaseSkillProvider, BaseLogger):
     def __del__(self):
         super().__del__()
 
+    def get_prompt_addition(self) -> str:
+        return "WeatherSkillProvider: これは天気を返答するスキルです。 フォーマット: `CALL_TIMER [area_kanji] [today|tomorrow]`"
+
     # 天気 質問に答える。天気の問い合わせではなければ None を返す
-    def try_get_answer(self, request_text):
+    def try_get_answer(self, request_text, use_stub):
+        if not use_stub:
+            # 新スキルコードをサポートしている場合、前処理しない
+            # Bardはかなり頭が悪いので新スキルコードを使えない
+            return None
+
+        self.log("try_get_answer", "stub! expect unreliable response from skill")
+
         if (("天気を教えて" in request_text) or ("天気は" in request_text)):
             # 天気情報を取得する日付のデフォルト値(今日の日付文字列)
             date_str = datetime.datetime.now().strftime("%Y-%m-%d")
@@ -113,48 +123,74 @@ class WeatherSkillProvider(BaseSkillProvider, BaseLogger):
                     date_str = (datetime.datetime.now() + datetime.timedelta(days=2)).strftime("%Y-%m-%d")
                     date = "あさって"
 
+                # 都市名を取得し、エリアコードを取得する
+                for area in area_codes.keys():
+                    if area in request_text:
+                        code = area_codes[area]
+                        break
+
+                # 都市名が見つからない場合は空で返す
+                else:
+                    answer_text = "エリア名が不明です。天気を取得したいエリアを指定してください"
+                    self.log("try_get_answer", answer_text)
+                    return answer_text
+
+                self.process(date, date_str, area, code)
+        else:
+            # 該当がない場合は空で返信
+            self.log("try_get_answer", "No Keyword for Weather")
+            return None
+
+    def process(self, date, date_str, area, code):
+        # APIから天気情報を取得する
+        url = f"https://www.jma.go.jp/bosai/forecast/data/forecast/{code}.json"
+        self.log("try_get_answer", "URL={}".format(url))
+        response = requests.get(url)
+        weather_data = response.json()
+
+        if global_config_prov.verbose():
+            self.log("try_get_answer", "weather_data = {}".format(weather_data))
+            self.log("try_get_answer", weather_data[0]["timeSeries"][0]["timeDefines"])
+
+        # 取得JSONから日付を検索
+        idx = 0
+        for time_define in weather_data[0]["timeSeries"][0]["timeDefines"]:
+            # 指定日の文字列を含む日時定義を検索し一致したら、そのインデックス値の天気を出力する
+            if (date_str in time_define):
+                weather_text = "{} {} の {} の天気は{} です。".format(date, date_str, area, weather_data[0]["timeSeries"][0]["areas"][0]["weathers"][idx])
+
+                self.log("try_get_answer", weather_text)
+                return weather_text
+            idx += 1
+
+        # 該当がない場合は空で返信
+        answer_text = "天気データが取得できませんでした。"
+        self.log("try_get_answer", answer_text)
+        return answer_text
+
+    def try_get_answer_post_process(self, response):
+        if response.startswith("CALL_WEATHER"):
+            args = response.split("\n")[0].split(" ")
+            if args[2] == "today":
+                date_str = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+                date = "あした"
+            else:
+                date_str = (datetime.datetime.now() + datetime.timedelta(days=2)).strftime("%Y-%m-%d")
+                date = "あさって"
+
             # 都市名を取得し、エリアコードを取得する
             for area in area_codes.keys():
-                if area in request_text:
+                if area in args[1]:
                     code = area_codes[area]
                     break
 
             # 都市名が見つからない場合は空で返す
             else:
                 answer_text = "エリア名が不明です。天気を取得したいエリアを指定してください"
-                self.log("try_get_answer", answer_text)
+                self.log("try_get_answer_post_process", answer_text)
                 return answer_text
 
-            # APIから天気情報を取得する
-            url = f"https://www.jma.go.jp/bosai/forecast/data/forecast/{code}.json"
-            self.log("try_get_answer", "URL={}".format(url))
-            response = requests.get(url)
-            weather_data = response.json()
-
-            if global_config_prov.verbose():
-                self.log("try_get_answer", "weather_data = {}".format(weather_data))
-                self.log("try_get_answer", weather_data[0]["timeSeries"][0]["timeDefines"])
-
-            # 取得JSONから日付を検索
-            idx = 0
-            for time_define in weather_data[0]["timeSeries"][0]["timeDefines"]:
-                # 指定日の文字列を含む日時定義を検索し一致したら、そのインデックス値の天気を出力する
-                if (date_str in time_define):
-                    weather_text = "{} {} の {} の天気は{} です。".format(date, date_str, area, weather_data[0]["timeSeries"][0]["areas"][0]["weathers"][idx])
-
-                    self.log("try_get_answer", weather_text)
-                    return weather_text
-                idx += 1
-
-            # 該当がない場合は空で返信
-            answer_text = "天気データが取得できませんでした。"
-            self.log("try_get_answer", answer_text)
-            return answer_text
-
-        else:
-            # 該当がない場合は空で返信
-            self.log("try_get_answer", "No Keyword for Weather")
-            return None
+            return self.process(date, date_str, area, code)
 
     def print_areas(self):
         response = requests.get("https://www.jma.go.jp/bosai/common/const/area.json")

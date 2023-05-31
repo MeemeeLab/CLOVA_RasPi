@@ -37,6 +37,9 @@ class TimerSkillProvider(BaseSkillProvider, BaseLogger):
         self._timer_thread.join()
         self.log("DTOR", "_timer_thread Joined!")
 
+    def get_prompt_addition(self) -> str:
+        return "TimerSkillProvider: これは指定時間後に自動返答するスキルです。 フォーマット: `CALL_TIMER [duration_in_seconds]`"
+
     # タイマの監視を開始
     def start(self):
         if (not self._is_timer_set):
@@ -74,18 +77,25 @@ class TimerSkillProvider(BaseSkillProvider, BaseLogger):
                 # self.Stop()
 
     # タイマーの 要求に答える。タイマーの要求ではなければ None を返す
-    def try_get_answer(self, request_text):
+    def try_get_answer(self, request_text, use_stub):
         if (not self._is_alarm_on):
+            if not use_stub:
+                # 新スキルコードをサポートしている場合、前処理しない
+                # Bardはかなり頭が悪いので新スキルコードを使えない
+                return None
+
+            self.log("try_get_answer", "stub! expect unreliable response from skill")
+
             if ((re.match(".*後に.*知らせて", request_text) is not None) or (re.match(".*後に.*タイマ.*セット", request_text) is not None)):
-                self.log("DTOR", "Match1")
+                self.log("try_get_answer", "Match1")
                 pos = request_text.find("後")
                 duration = request_text[:pos]
                 self._duration = duration
-                self.log("DTOR", duration)
+                self.log("try_get_answer", duration)
                 if (duration != ""):
                     answer_text = "{}後にタイマーをセットします。".format(duration)
                     self.set_duration(duration)
-                    self.log("DTOR", answer_text)
+                    self.log("try_get_answer", answer_text)
                     # self._is_timer_set = True #??
                     return answer_text
                 else:
@@ -107,6 +117,16 @@ class TimerSkillProvider(BaseSkillProvider, BaseLogger):
                 answer_text = "終了待ちです。"
                 self.log("try_get_answer", answer_text)
                 return answer_text
+
+    def try_get_answer_post_process(self, response):
+        if response.startswith("CALL_TIMER"):
+            args = response.split("\n")[0].split(" ")
+            secs = int(args[1])
+            self.target_time = datetime.datetime.now() + datetime.timedelta(seconds=secs)
+            self.log("set_duration", "{} = {} sec @ {}".format(args[1], secs, self.target_time))
+            self._is_timer_set = True
+            self.start()
+            return "タイマーをセットしました"
 
     # 満了までの期間から、満了日時分秒を割り出す
     def set_duration(self, duration):

@@ -7,6 +7,20 @@ from clova.config.config import global_config_prov
 
 from clova.general.logger import BaseLogger
 
+GLOBAL_CHARACTER_CONFIG_PROMPT = """
+使用可能なスキル：
+```
+{SKILL_LIST}
+```
+これらの応答を使用する際、説明等は含めないでください。これは機械によって読み取られます。
+これらに該当すると思われない文章があった場合、そのまま日本語で応答してください。
+
+以下がユーザーの文書です。これに応答して下さい。
+```
+{STT_RESULT}
+```
+"""
+
 # ==================================
 #       キャラクタ管理クラス
 # ==================================
