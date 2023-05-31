@@ -10,6 +10,7 @@ from clova.processor.skill.news import NewsSkillProvider
 from clova.processor.skill.weather import WeatherSkillProvider
 from clova.processor.skill.line import LineSkillProvider
 from clova.processor.skill.datetime import DateTimeSkillProvider
+from clova.processor.skill.music import MusicSkillProvider
 
 from clova.general.queue import global_speech_queue
 from clova.config.config import global_config_prov
@@ -29,7 +30,7 @@ class ConversationController(BaseLogger):
         "Bard": BardConversationProvider
     }
     SKILL_MODULES: Tuple[BaseSkillProvider] = [
-        TimerSkillProvider(), NewsSkillProvider(), WeatherSkillProvider(), LineSkillProvider(), DateTimeSkillProvider()
+        TimerSkillProvider(), NewsSkillProvider(), WeatherSkillProvider(), LineSkillProvider(), DateTimeSkillProvider(), MusicSkillProvider()
     ]
 
     # コンストラクタ
@@ -68,7 +69,7 @@ class ConversationController(BaseLogger):
         # スキル
         for skill in self.SKILL_MODULES:
             result = skill.try_get_answer(prompt, not self.provider.supports_prompt_skill())
-            if result:
+            if result is not None:
                 return result
 
         # どれにも該当しないときには AI に任せる。
@@ -95,7 +96,7 @@ class ConversationController(BaseLogger):
         # スキル (post process)
         for skill in self.SKILL_MODULES:
             response = skill.try_get_answer_post_process(result)
-            if response:
+            if response is not None:
                 return response
 
         return result

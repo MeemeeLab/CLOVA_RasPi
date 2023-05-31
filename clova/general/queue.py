@@ -21,15 +21,19 @@ class SpeechQueue(BaseLogger):
     def __del__(self):
         super().__del__()
 
-    # 文字列をキューに格納する
-    def add(self, string):
-        if string.strip() == "" or self.REGEX_ASSUME_EMPTY.match(string) is not None:
-            self.log("add", "SpeechQueue却下: \'{}\'".format(string))
+    # 文字列・関数をキューに格納する
+    def add(self, str_or_func):
+        if callable(str_or_func):
+            self.log("add", "SpeechQueue += function()")
+            self._queue.append(str_or_func)
             return
-        self.log("add", "SpeechQueue += \'{}\'".format(string))
-        self._queue.append(string)
+        if str_or_func.strip() == "" or self.REGEX_ASSUME_EMPTY.match(str_or_func) is not None:
+            self.log("add", "SpeechQueue却下: \'{}\'".format(str_or_func))
+            return
+        self.log("add", "SpeechQueue += \'{}\'".format(str_or_func))
+        self._queue.append(str_or_func)
 
-    # キューから文字列を取得する
+    # キューから文字列・関数を取得する
     def get(self):
         return self._queue.popleft()
 

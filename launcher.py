@@ -57,16 +57,19 @@ def main():
     # メインループ
     while True:
 
-        int_exists, stt_result = conv.check_for_interrupted_voice()
+        int_exists, str_or_func = conv.check_for_interrupted_voice()
 
         # 割り込み音声ありの時
-        if (int_exists):
-            if stt_result is not None:
-                audio = voice.text_to_speech(stt_result)
-                if (audio is not None):
-                    voice.play_audio(audio)
-                else:
-                    logger.log("main", "音声ファイルを取得できませんでした。")
+        if int_exists and str_or_func is not None:
+            if callable(str_or_func):
+                str_or_func()
+                continue
+
+            audio = voice.text_to_speech(str_or_func)
+            if (audio is not None):
+                voice.play_audio(audio)
+            else:
+                logger.log("main", "音声ファイルを取得できませんでした。")
 
         # 割り込み音声無の時
         else:
@@ -80,22 +83,22 @@ def main():
                 record_data = b""
 
             # テキストに返還
-            stt_result = voice.speech_to_text(record_data)
+            str_or_func = voice.speech_to_text(record_data)
 
-            if stt_result is None:
+            if str_or_func is None:
                 logger.log("main", "発話なし")
                 continue
 
-            logger.log("main", "発話メッセージ:{}".format(stt_result))
+            logger.log("main", "発話メッセージ:{}".format(str_or_func))
 
             # 終了ワードチェック
-            if (stt_result == "終了") or (stt_result == "終了。"):
+            if (str_or_func == "終了") or (str_or_func == "終了。"):
                 answer_result = "わかりました。終了します。さようなら。"
                 is_exit = True
 
             else:
                 # 会話モジュールから、問いかけに対する応答を取得
-                answer_result = conv.get_answer(stt_result)
+                answer_result = conv.get_answer(str_or_func)
                 is_exit = False
 
             # 応答が空でなかったら再生する。
