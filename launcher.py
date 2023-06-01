@@ -5,6 +5,7 @@ from clova.io.local.led import global_led_Ill
 from clova.io.local.volume import global_vol
 from clova.config.character import global_character_prov
 from clova.general.queue import global_speech_queue
+from clova.io.network.debug_interface import global_debug_interface
 
 from clova.processor.skill.line import LineSkillProvider, HttpReqLineHandler
 from clova.processor.skill.timer import TimerSkillProvider
@@ -48,6 +49,9 @@ def main():
     conv.tmr = tmr
     # tmr.Start()
 
+    debug_interface_messages = []
+    global_debug_interface.bind_message_callback(lambda message: debug_interface_messages.append(message))
+
     system = platform.system()
     is_debug_session = False
     if system == "Windows" or system == "Darwin":
@@ -56,7 +60,6 @@ def main():
 
     # メインループ
     while True:
-
         int_exists, str_or_func = conv.check_for_interrupted_voice()
 
         # 割り込み音声ありの時
@@ -82,27 +85,32 @@ def main():
                 time.sleep(10)
                 record_data = b""
 
-            # テキストに返還
-            str_or_func = voice.speech_to_text(record_data)
+            if debug_interface_messages:
+                # デバッグインタフェースからのメッセージ
+                stt_result = debug_interface_messages.pop(0)
+            else:
+                # テキストに返還
+                stt_result = voice.speech_to_text(record_data)
 
-            if str_or_func is None:
-                logger.log("main", "発話なし")
-                continue
+                if stt_result is None:
+                    logger.log("main", "発話なし")
+                    continue
 
-            logger.log("main", "発話メッセージ:{}".format(str_or_func))
+            logger.log("main", "発話メッセージ:{}".format(stt_result))
 
             # 終了ワードチェック
-            if (str_or_func == "終了") or (str_or_func == "終了。"):
+            if (stt_result == "終了") or (stt_result == "終了。"):
                 answer_result = "わかりました。終了します。さようなら。"
                 is_exit = True
 
             else:
                 # 会話モジュールから、問いかけに対する応答を取得
-                answer_result = conv.get_answer(str_or_func)
+                answer_result = conv.get_answer(stt_result)
                 is_exit = False
 
             # 応答が空でなかったら再生する。
             if ((answer_result is not None) and (answer_result != "")):
+                global_debug_interface.send_all(answer_result)
                 logger.log("main", "応答メッセージ:{}".format(answer_result))
 
                 answered_text_list = answer_result.split("\n")
@@ -127,4 +135,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        global_debug_interface.__del__()

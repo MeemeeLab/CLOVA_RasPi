@@ -12,6 +12,7 @@ from clova.config.config import global_config_prov
 from clova.config.character import global_character_prov
 from clova.io.local.volume import global_vol
 from clova.general.queue import global_speech_queue
+from clova.io.network.debug_interface import global_debug_interface
 
 from clova.processor.stt.base_stt import BaseSTTProvider
 from clova.processor.stt.google_cloud_speech import GoogleCloudSpeechSTTProvider
@@ -68,10 +69,12 @@ class VoiceController(BaseLogger):
                  self.silent_threshold, self.terminate_silent_duration, self.speaker_num_ch, self.speaker_device_index))  # for debug
 
         global_character_prov.bind_for_update(self._update_system_conf)
+        global_debug_interface.bind_message_callback(self._interface_message)
 
         self._update_system_conf()
 
         self._wav_conversion_ffmpeg_waiting = None
+        self._interface_pending_message = []
 
     # デストラクタ
     def __del__(self):
@@ -88,10 +91,18 @@ class VoiceController(BaseLogger):
         self.tts = self.TTS_MODULES[self.tts_system]()
         self.stt = self.STT_MODULES[self.stt_system]()
 
+    def _interface_message(self, message):
+        self._interface_pending_message.append(message)
+
     # マイクからの録音
     def microphone_record(self):
         # 底面 LED を赤に
         global_led_Ill.set_all(global_led_Ill.RGB_RED)
+
+        # デバッグインタフェースにメッセージがある時は即座に返す
+        if self._interface_pending_message:
+            self._interface_pending_message.pop(0)
+            return None
 
         # PyAudioのオブジェクトを作成
         pyaud = pyaudio.PyAudio()
@@ -129,6 +140,19 @@ class VoiceController(BaseLogger):
 
         # 録音ループ
         while True:
+            # デバッグインタフェースにメッセージがある時は即座に返す
+            if self._interface_pending_message:
+                self._interface_pending_message.pop(0)
+
+                # 録音停止
+                rec_stream.stop_stream()
+                rec_stream.close()
+
+                # PyAudioオブジェクトを終了
+                pyaud.terminate()
+
+                return None
+
             # データ取得
             data = rec_stream.read(GOOGLE_SPEECH_SIZEOF_CHUNK)
 
