@@ -21,10 +21,15 @@ class VolumeController(BaseLogger):
         super().__init__()
 
         self._vol_step = 7
+        self._cb_waiting = False
 
     # デストラクタ
     def __del__(self):
         super().__del__()
+
+    def _speech_queue_cb(self):
+        self._cb_waiting = False
+        global_speech_queue.add("ボリュームを {} に設定しました。".format(str(self._vol_step)))
 
     # ボリューム [+] 押下時処理
     def vol_up_cb(self, arg):
@@ -32,9 +37,10 @@ class VolumeController(BaseLogger):
             self._vol_step += 1
             self.vol_value = self.VOL_TABLE[self._vol_step]
             self.log("vol_up_cb", "Vol + [={}({})]".format(self._vol_step, self.vol_value))
-            vol_speech = "ボリュームを {} に設定しました。".format(str(self._vol_step))
-            self.log("vol_up_cb", vol_speech)
-            global_speech_queue.add(vol_speech)
+
+            if not self._cb_waiting:
+                self._cb_waiting = True
+                global_speech_queue.add(self._speech_queue_cb)
 
     # ボリューム [-] 押下時処理
     def vol_down_cb(self, arg):
@@ -42,9 +48,9 @@ class VolumeController(BaseLogger):
             self._vol_step -= 1
             self.vol_value = self.VOL_TABLE[self._vol_step]
             self.log("vol_down_cb", "Vol - [={}({})]".format(self._vol_step, self.vol_value))
-            vol_speech = "ボリュームを {} に設定しました。".format(str(self._vol_step))
-            self.log("vol_down_cb", vol_speech)
-            global_speech_queue.add(vol_speech)
+            if not self._cb_waiting:
+                self._cb_waiting = True
+                global_speech_queue.add(self._speech_queue_cb)
 
 
 # ==================================
