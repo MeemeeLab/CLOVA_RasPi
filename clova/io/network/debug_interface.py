@@ -13,6 +13,7 @@ class RemoteInteractionInterface(BaseLogger):
         super().__init__()
         self._ws_thread_stop_event = threading.Event()
         self._ws_thread = threading.Thread(target=self.init)
+        self._ws_thread.daemon = True
         self._ws_thread.start()
 
     def __del__(self):

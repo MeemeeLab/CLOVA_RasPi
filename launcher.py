@@ -135,7 +135,4 @@ def main():
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        global_debug_interface.__del__()
+    main()
