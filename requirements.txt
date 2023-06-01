@@ -8,6 +8,6 @@ grpcio
 python-voicetext
 ffmpeg-python
 python-dotenv
-bardapi
+git+https://github.com/dsdanielpark/Bard-API
 regex
 websockets

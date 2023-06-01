@@ -1,11 +1,12 @@
 import os
-from bardapi import Bard
+from http.cookies import SimpleCookie
+from bardapi import Bard, BardCookies
 
 from clova.processor.conversation.base_conversation import BaseConversationProvider
 
 from clova.general.logger import BaseLogger
 
-# Bard にはタイマースキル以外いらないかも
+# Bard にはタイマー&音楽スキル以外いらないかも
 
 
 class BardConversationProvider(BaseConversationProvider, BaseLogger):
@@ -18,7 +19,10 @@ class BardConversationProvider(BaseConversationProvider, BaseLogger):
         super().__init__()
 
         self.BARD_PSID = os.environ["BARD_PSID"]
-        self.bard = Bard(token=self.BARD_PSID)
+        self.cookies = SimpleCookie()
+        self.cookies.load(self.BARD_PSID)
+
+        self.bard = Bard(token=self.BARD_PSID) if "__Secure-1PSID" not in self.cookies else BardCookies(cookie_dict=self.cookies)
         self.set_persona("")
 
     # デストラクタ
