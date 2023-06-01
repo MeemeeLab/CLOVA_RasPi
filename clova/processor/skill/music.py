@@ -12,6 +12,8 @@ from clova.config.config import global_config_prov
 
 from clova.general.voice import PCM_PLAY_SIZEOF_CHUNK, SPEECH_FORMAT
 
+from clova.io.local.switch import SwitchInput
+
 from clova.processor.skill.base_skill import BaseSkillProvider
 from clova.general.logger import BaseLogger
 
@@ -27,13 +29,18 @@ class MusicSkillProvider(BaseSkillProvider, BaseLogger):
     def __init__(self):
         super().__init__()
         self.speaker_device_index = global_config_prov.get_general_config()["hardware"]["audio"]["speaker"]["index"]
+        self.stop_btn = SwitchInput(SwitchInput.PIN_BACK_SW_MUTE, lambda _: self._stop())
+        self._stop_flg = False
 
     # デストラクタ
     def __del__(self):
         super().__del__()
 
     def get_prompt_addition(self) -> str:
-        return "MusicSkillProvider: これは音楽を再生するスキルです。このスキルを使用すると音楽が再生できます。  フォーマット: `CALL_MUSIC [jp_name]`"
+        return "MusicSkillProvider: これは音楽を再生するスキルです。このスキルを使用すると音楽が再生できます。  フォーマット: `CALL_MUSIC [search_query_multilang]`"
+
+    def _stop(self):
+        self._stop_flg = True
 
     def _handle_ffmpeg_output(self, pyaud, stdout):
         play_stream = None
@@ -82,7 +89,8 @@ class MusicSkillProvider(BaseSkillProvider, BaseLogger):
         while True:
             chunk = os.read(fd, PCM_PLAY_SIZEOF_CHUNK)
 
-            if chunk == b"":
+            if chunk == b"" or self._stop_flg:
+                self._stop_flg = False
                 break
 
             ffmpeg_proc.stdin.write(chunk)
@@ -141,6 +149,7 @@ class MusicSkillProvider(BaseSkillProvider, BaseLogger):
         self.log("try_get_answer", "stub! expect unreliable response from skill")
 
         if ("音楽" in request_string) and (("かけて" in request_string) or ("再生" in request_string)):
+            global_speech_queue.add("曲 {} を再生します。 ミュートボタンを押して停止します。".format(" ".join(request_string)))
             global_speech_queue.add(lambda: self.try_play_music(request_string))
             return ""  # 意図的
 
@@ -150,6 +159,7 @@ class MusicSkillProvider(BaseSkillProvider, BaseLogger):
     def try_get_answer_post_process(self, response):
         if response.startswith("CALL_MUSIC"):
             args = response.split("\n")[0].split(" ")
+            global_speech_queue.add("曲 {} を再生します。 ミュートボタンを押して停止します。".format(" ".join(args[1:])))
             global_speech_queue.add(lambda: self.try_play_music(" ".join(args[1:])))
             return ""  # 意図的
 

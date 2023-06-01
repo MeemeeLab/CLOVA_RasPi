@@ -68,6 +68,8 @@ def main():
                 str_or_func()
                 continue
 
+            global_debug_interface.send_all(str_or_func)
+
             audio = voice.text_to_speech(str_or_func)
             if (audio is not None):
                 voice.play_audio(audio)
