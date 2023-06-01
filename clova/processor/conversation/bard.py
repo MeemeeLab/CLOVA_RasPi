@@ -12,8 +12,6 @@ from clova.general.logger import BaseLogger
 class BardConversationProvider(BaseConversationProvider, BaseLogger):
     CHARACTER_CONFIG = "あなたはサービス終了で使えなくなったクローバの後を次ぎました。"
 
-    is_first_time = True
-
     # コンストラクタ
     def __init__(self):
         super().__init__()
@@ -37,12 +35,13 @@ class BardConversationProvider(BaseConversationProvider, BaseLogger):
 
     def get_answer(self, prompt, **kwargs):
         self.log("get_answer", "Bard 応答作成中")
-        actual_prompt = self._char_setting_str + "\n" + prompt if self.is_first_time else prompt
+        actual_prompt = self._char_setting_str + "\n" + prompt
 
         result = self.bard.get_answer(actual_prompt)
 
         self.log("get_answer", result)
 
-        self.is_first_time = False
+        self.bard.conversation_id, self.bard.response_id, self.bard.choice_id = ("", "", "")
+        self.bard._reqid = 0
 
         return result["content"]
