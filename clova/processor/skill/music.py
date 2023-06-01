@@ -81,8 +81,10 @@ class MusicSkillProvider(BaseSkillProvider, BaseLogger):
         # パイプ
         while True:
             chunk = os.read(fd, PCM_PLAY_SIZEOF_CHUNK)
-            if chunk is None:
+
+            if chunk == b"":
                 break
+
             ffmpeg_proc.stdin.write(chunk)
 
         os.close(fd)
@@ -124,7 +126,10 @@ class MusicSkillProvider(BaseSkillProvider, BaseLogger):
 
         yt_dlp_handler.join()
 
-        os.remove(self.YT_DLP_PIPE)
+        try:
+            os.remove(self.YT_DLP_PIPE)
+        except Exception:
+            pass
 
     # 日時 質問に答える。日時の問い合わせではなければ None を返す
     def try_get_answer(self, request_string, use_stub):
@@ -134,9 +139,6 @@ class MusicSkillProvider(BaseSkillProvider, BaseLogger):
             return None
 
         self.log("try_get_answer", "stub! expect unreliable response from skill")
-
-        # global_speech_queue.add(lambda: self.try_play_music("ハルトマンの妖怪少女 疾走アレンジ"))
-        # return ""
 
         if ("音楽" in request_string) and (("かけて" in request_string) or ("再生" in request_string)):
             global_speech_queue.add(lambda: self.try_play_music(request_string))
