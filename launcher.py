@@ -10,7 +10,7 @@ from clova.io.network.debug_interface import global_debug_interface
 from clova.processor.skill.line import LineSkillProvider, HttpReqLineHandler
 from clova.processor.skill.timer import TimerSkillProvider
 
-from clova.io.http.http_server import HttpServer
+from clova.io.network.http_server import HttpServer
 from clova.config.config import HttpReqSettingHandler
 from clova.io.local.switch import SwitchInput
 
