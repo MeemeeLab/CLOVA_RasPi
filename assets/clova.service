@@ -1,0 +1,13 @@
+[Unit]
+Description=CLOVA_RasPi
+After=network.target
+
+[Service]
+User={USERNAME}
+Group={GROUP_ID}
+ExecStart=/usr/bin/python3 {LAUNCHER_PATH}
+WorkingDirectory={LAUNCHER_DIR}
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
