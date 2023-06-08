@@ -1,5 +1,3 @@
-from clova.general.queue import global_speech_queue
-from clova.general.voice import VoiceController
 import sys
 import os
 import threading
@@ -11,6 +9,9 @@ except BaseException:
 import pyaudio as PyAudio
 
 sys.path.append(os.getcwd())
+
+from clova.general.queue import global_speech_queue  # noqa: E402
+from clova.general.voice import VoiceController  # noqa: E402
 
 
 PIN_FRONT_SW = 4
