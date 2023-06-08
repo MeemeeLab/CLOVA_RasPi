@@ -130,7 +130,7 @@ JSON形式のマッピングは、`assets/CLOVA_requirements.json`で確認で�
 
 以下のコマンドを実行して、入出力のデバイスインデックス値を確認します。
 
-`python ~/CLOVA_RasPi/CLOVA_test.py get_indecies`
+`python ~/CLOVA_RasPi/CLOVA_test.py get_indexes`
 
 デバイスインデックスとは、pyaudioの中の設定パラメータ番号のようなもので、何度かやった限りでは Index=11 になるようですが、環境によっては異なる場合もあります。以下のように出力されます。
 
