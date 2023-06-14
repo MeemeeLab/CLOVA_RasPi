@@ -1,5 +1,3 @@
-from clova.general.queue import global_speech_queue
-
 from clova.general.logger import BaseLogger
 
 # ==================================
@@ -17,11 +15,12 @@ class VolumeController(BaseLogger):
     VOL_TABLE = [0.001, 0.01, 0.1, 0.15, 0.2, 0.3, 0.5, 0.8, 1.0, 1.2, 1.5, 1.8, 2.0]
 
     # コンストラクタ
-    def __init__(self):
+    def __init__(self, global_speech_queue):
         super().__init__()
 
         self._vol_step = 7
         self._cb_waiting = False
+        self._global_speech_queue = global_speech_queue
 
     # デストラクタ
     def __del__(self):
@@ -29,7 +28,7 @@ class VolumeController(BaseLogger):
 
     def _speech_queue_cb(self):
         self._cb_waiting = False
-        global_speech_queue.add("ボリュームを {} に設定しました。".format(str(self._vol_step)))
+        self._global_speech_queue.add("ボリュームを {} に設定しました。".format(str(self._vol_step)))
 
     # ボリューム [+] 押下時処理
     def vol_up_cb(self, arg):
@@ -40,7 +39,7 @@ class VolumeController(BaseLogger):
 
             if not self._cb_waiting:
                 self._cb_waiting = True
-                global_speech_queue.add(self._speech_queue_cb)
+                self._global_speech_queue.add(self._speech_queue_cb)
 
     # ボリューム [-] 押下時処理
     def vol_down_cb(self, arg):
@@ -50,13 +49,8 @@ class VolumeController(BaseLogger):
             self.log("vol_down_cb", "Vol - [={}({})]".format(self._vol_step, self.vol_value))
             if not self._cb_waiting:
                 self._cb_waiting = True
-                global_speech_queue.add(self._speech_queue_cb)
+                self._global_speech_queue.add(self._speech_queue_cb)
 
-
-# ==================================
-#      外部参照用のインスタンス
-# ==================================
-global_vol = VolumeController()
 
 # ==================================
 #       本クラスのテスト用処理

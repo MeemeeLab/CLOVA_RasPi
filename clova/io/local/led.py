@@ -97,7 +97,7 @@ class IllminationLed(BaseLogger):
         super().__del__()
 
         try:
-            self.set_all(global_led_Ill.RGB_RED)
+            self.set_all(IllminationLed.RGB_RED)
             self.finalize()
         except Exception:
             self.log("DTOR", "デストラクト <IllminationLed> 失敗; もうすでにデストラクタ呼ばれた？")
@@ -211,11 +211,6 @@ class IllminationLed(BaseLogger):
         GPIO.cleanup(PIN_ILL_LED_ENA)
         self.log("finalize", "Finalize")
 
-
-# ==================================
-#      外部参照用のインスタンス
-# ==================================
-global_led_Ill = IllminationLed()
 
 # ==================================
 #       本クラスのテスト用処理

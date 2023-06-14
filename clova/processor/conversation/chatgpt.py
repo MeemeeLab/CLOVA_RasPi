@@ -1,7 +1,7 @@
 import os
 import openai
 
-from clova.config.config import global_config_prov
+from clova.general.globals import global_config_prov
 
 from clova.processor.conversation.base_conversation import BaseConversationProvider
 

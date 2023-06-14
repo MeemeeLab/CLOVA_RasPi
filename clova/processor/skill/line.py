@@ -7,8 +7,7 @@ import requests
 import urllib.parse
 import urllib.request
 
-from clova.general.queue import global_speech_queue
-from clova.config.config import global_config_prov
+from clova.general.globals import global_speech_queue, global_config_prov
 
 from clova.processor.skill.base_skill import BaseSkillProvider
 from clova.general.logger import BaseLogger

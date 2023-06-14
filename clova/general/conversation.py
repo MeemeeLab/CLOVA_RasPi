@@ -14,10 +14,7 @@ from clova.processor.skill.datetime import DateTimeSkillProvider
 from clova.processor.skill.music import MusicSkillProvider
 from clova.processor.skill.alarm import AlarmSkillProvider
 
-from clova.general.queue import global_speech_queue
-from clova.config.config import global_config_prov
-from clova.config.character import global_character_prov, GLOBAL_CHARACTER_CONFIG_PROMPT
-from clova.io.local.led import global_led_Ill
+from clova.general.globals import global_speech_queue, global_config_prov, global_character_prov, global_led_ill, GLOBAL_CHARACTER_CONFIG_PROMPT
 
 from clova.general.logger import BaseLogger
 
@@ -89,7 +86,7 @@ class ConversationController(BaseLogger):
         self.log("get_answer", "actual_prompt: {}".format(actual_prompt))
 
         # 底面 LED をピンクに
-        global_led_Ill.set_all(global_led_Ill.RGB_PINK)
+        global_led_ill.set_all(global_led_ill.RGB_PINK)
 
         result = self.provider.get_answer(actual_prompt, **kwargs)
 

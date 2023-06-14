@@ -54,6 +54,3 @@ class RemoteInteractionInterface(BaseLogger):
     def send_all(self, message):
         for conn in self._connected_clients:
             conn.send(message)
-
-
-global_debug_interface = RemoteInteractionInterface()

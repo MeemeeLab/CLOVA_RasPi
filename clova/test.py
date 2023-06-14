@@ -10,7 +10,7 @@ import pyaudio as PyAudio
 
 sys.path.append(os.getcwd())
 
-from clova.general.queue import global_speech_queue  # noqa: E402
+from clova.general.globals import global_speech_queue  # noqa: E402
 from clova.general.voice import VoiceController  # noqa: E402
 
 

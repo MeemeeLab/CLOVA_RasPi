@@ -2,7 +2,7 @@ import re
 import requests
 import datetime
 
-from clova.config.config import global_config_prov
+from clova.general.globals import global_config_prov
 
 from clova.processor.skill.base_skill import BaseSkillProvider
 

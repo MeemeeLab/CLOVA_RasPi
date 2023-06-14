@@ -1,8 +1,7 @@
 import threading as th
 import datetime
 
-from clova.general.queue import global_speech_queue
-from clova.io.local.db import global_db
+from clova.general.globals import global_speech_queue, global_db
 
 from clova.processor.skill.base_skill import BaseSkillProvider
 

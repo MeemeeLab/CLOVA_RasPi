@@ -7,12 +7,7 @@ import ffmpeg
 
 from typing import Dict, Type
 
-from clova.io.local.led import global_led_Ill
-from clova.config.config import global_config_prov
-from clova.config.character import global_character_prov
-from clova.io.local.volume import global_vol
-from clova.general.queue import global_speech_queue
-from clova.io.network.debug_interface import global_debug_interface
+from clova.general.globals import global_led_ill, global_config_prov, global_character_prov, global_vol, global_speech_queue, global_debug_interface
 
 from clova.processor.stt.base_stt import BaseSTTProvider
 from clova.processor.stt.google_cloud_speech import GoogleCloudSpeechSTTProvider
@@ -97,7 +92,7 @@ class VoiceController(BaseLogger):
     # マイクからの録音
     def microphone_record(self):
         # 底面 LED を赤に
-        global_led_Ill.set_all(global_led_Ill.RGB_RED)
+        global_led_ill.set_all(global_led_ill.RGB_RED)
 
         # デバッグインタフェースにメッセージがある時は即座に返す
         if self._interface_pending_message:
@@ -111,7 +106,7 @@ class VoiceController(BaseLogger):
         self.log("microphone_record", "聞き取り中：")
 
         # 底面 LED を暗緑に
-        global_led_Ill.set_all(global_led_Ill.RGB_DARKGREEN)
+        global_led_ill.set_all(global_led_ill.RGB_DARKGREEN)
 
         # 録音準備
         rec_stream = pyaud.open(format=SPEECH_FORMAT,
@@ -184,7 +179,7 @@ class VoiceController(BaseLogger):
                 # まだ開始できていなかったら、ここから録音開始
                 if not recording:
                     # 底面 LED を緑に
-                    global_led_Ill.set_all(global_led_Ill.RGB_GREEN)
+                    global_led_ill.set_all(global_led_ill.RGB_GREEN)
 
                     # 録音開始
                     self.log("microphone_record", "録音開始")
@@ -212,7 +207,7 @@ class VoiceController(BaseLogger):
     # 音声からテキストに変換
     def speech_to_text(self, audio):
         # 底面 LED をオレンジに
-        global_led_Ill.set_all(global_led_Ill.RGB_ORANGE)
+        global_led_ill.set_all(global_led_ill.RGB_ORANGE)
 
         if len(audio) == 0:
             return None
@@ -223,7 +218,7 @@ class VoiceController(BaseLogger):
 
     def text_to_speech(self, text):
         # 底面 LED を青に
-        global_led_Ill.set_all(global_led_Ill.RGB_BLUE)
+        global_led_ill.set_all(global_led_ill.RGB_BLUE)
 
         return self.tts.tts(text, **self.tts_kwargs)
 
@@ -277,7 +272,7 @@ class VoiceController(BaseLogger):
     # 音声ファイルの再生
     def play_audio(self, audio):
         # 底面 LED を水に
-        global_led_Ill.set_all(global_led_Ill.RGB_CYAN)
+        global_led_ill.set_all(global_led_ill.RGB_CYAN)
 
         # with open("./test.wav", "wb") as f:
         #     f.write(audio)

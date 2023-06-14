@@ -48,6 +48,3 @@ class Database(BaseLogger):
 
         cur.close()
         return result
-
-
-global_db = Database()

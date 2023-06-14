@@ -3,7 +3,7 @@ import time
 import datetime
 import re
 
-from clova.general.queue import global_speech_queue
+from clova.general.globals import global_speech_queue
 
 from clova.processor.skill.base_skill import BaseSkillProvider
 

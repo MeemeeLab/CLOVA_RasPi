@@ -1,17 +1,13 @@
 from clova.general.conversation import ConversationController
 from clova.general.voice import VoiceController
 
-from clova.io.local.led import global_led_Ill
-from clova.io.local.volume import global_vol
-from clova.config.character import global_character_prov
-from clova.general.queue import global_speech_queue
-from clova.io.network.debug_interface import global_debug_interface
+from clova.general.globals import global_led_ill, global_vol, global_character_prov, global_speech_queue, global_debug_interface
 
 from clova.processor.skill.line import LineSkillProvider, HttpReqLineHandler
 from clova.processor.skill.timer import TimerSkillProvider
 
 from clova.io.network.http_server import HttpServer
-from clova.config.config import HttpReqSettingHandler
+from clova.config.config_server import HttpReqSettingHandler
 from clova.io.local.switch import SwitchInput
 
 from clova.general.logger import Logger
@@ -34,7 +30,7 @@ def main():
     line_sender = LineSkillProvider()
 
     # 底面 LED を黄色に
-    global_led_Ill.set_all(global_led_Ill.RGB_YELLOW)
+    global_led_ill.set_all(global_led_ill.RGB_YELLOW)
 
     # LEDを使うモジュールにインスタンスをコピー
     voice = VoiceController()
@@ -126,7 +122,7 @@ def main():
                 break
 
     # 底面 LED をオフに
-    global_led_Ill.set_all(global_led_Ill.RGB_OFF)
+    global_led_ill.set_all(global_led_ill.RGB_OFF)
 
     line_svr.__del__()
     config_svr.__del__()

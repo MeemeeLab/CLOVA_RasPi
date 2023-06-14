@@ -3,7 +3,7 @@ import requests
 import json
 import time
 
-from clova.config.config import global_config_prov
+from clova.general.globals import global_config_prov
 
 from clova.processor.tts.base_tts import BaseTTSProvider
 

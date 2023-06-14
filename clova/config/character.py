@@ -2,12 +2,9 @@ import json
 
 from typing import Tuple
 
-from clova.general.queue import global_speech_queue
-from clova.config.config import global_config_prov
-
 from clova.general.logger import BaseLogger
 
-GLOBAL_CHARACTER_CONFIG_PROMPT = """
+CHARACTER_CONFIG_PROMPT = """
 {CURRENT_DATETIME}
 
 使用可能なスキル：
@@ -38,8 +35,10 @@ class CharacterProvider(BaseLogger):
     update_callbacks = []
 
     # コンストラクタ
-    def __init__(self):
+    def __init__(self, global_config_prov, global_speech_queue):
         super().__init__()
+        self._global_config_prov = global_config_prov
+        self._global_speech_queue = global_speech_queue
 
         # キャラクタ設定ファイルの読み込み
         self.read_character_config_file()
@@ -59,11 +58,11 @@ class CharacterProvider(BaseLogger):
             cb()
         select_speech = "キャラクタ {}さん CV {}が選択されました。".format(self.character["persona"]["name"], id)
         self.log("set_character", select_speech)
-        global_speech_queue.add(select_speech)
+        self._global_speech_queue.add(select_speech)
 
     def get_character_settings(self):
         if self.character is None:
-            global_character_prov.set_character(global_config_prov.get_general_config()["character"])
+            self.set_character(self._global_config_prov.get_general_config()["character"])
 
         return self.character
 
@@ -94,7 +93,7 @@ class CharacterProvider(BaseLogger):
 
     # キャラクタに必要なクレデンシャル名を取得
     def get_requirements(self, id) -> Tuple[Tuple[str]]:
-        return global_config_prov.get_requirements_config()["tts"][self.systems['characters'][id]["tts"]["system"]]["requires"]
+        return self._global_config_prov.get_requirements_config()["tts"][self.systems['characters'][id]["tts"]["system"]]["requires"]
 
     # 次のキャラクターを選択
     def select_next_character(self):
@@ -108,7 +107,7 @@ class CharacterProvider(BaseLogger):
 
             # 選択可のキャラクタまで行くか、一周したら抜ける
             if (
-                global_config_prov.is_requirements_met(self.get_requirements(self.character_index[num])) or num == self.current_character_num
+                self._global_config_prov.is_requirements_met(self.get_requirements(self.character_index[num])) or num == self.current_character_num
             ):
                 break
 
@@ -124,17 +123,12 @@ class CharacterProvider(BaseLogger):
 
 
 # ==================================
-#      外部参照用のインスタンス
-# ==================================
-global_character_prov = CharacterProvider()
-
-# ==================================
 #       本クラスのテスト用処理
 # ==================================
 
 
 def module_test():
-    print("characters_len = {}".format(str(global_character_prov.systems["characters"].keys())))
+    print("characters_len = {}".format(str(CharacterProvider().systems["characters"].keys())))
 
 
 # ==================================

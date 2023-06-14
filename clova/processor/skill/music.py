@@ -6,9 +6,7 @@ import os
 import threading
 import time
 
-from clova.io.local.volume import global_vol
-from clova.general.queue import global_speech_queue
-from clova.config.config import global_config_prov
+from clova.general.globals import global_vol, global_speech_queue, global_config_prov
 
 from clova.general.voice import PCM_PLAY_SIZEOF_CHUNK, SPEECH_FORMAT
 
