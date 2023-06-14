@@ -6,7 +6,7 @@ from clova.general.queue import SpeechQueue
 from clova.io.local.db import Database
 from clova.io.local.led import IllminationLed
 from clova.io.local.volume import VolumeController
-from clova.io.network .debug_interface import RemoteInteractionInterface
+from clova.io.network.debug_interface import RemoteInteractionInterface
 
 global_config_prov = ConfigurationProvider()
 global_speech_queue = SpeechQueue()
