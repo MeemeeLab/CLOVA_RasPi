@@ -20,7 +20,7 @@ class TimerSkillProvider(BaseSkillProvider, BaseLogger):
     def __init__(self):
         super().__init__()
 
-        self._active = False
+        self._stop_event = th.Event()
         self._is_timer_set = False
         self._is_alarm_on = False
         self._timer_thread = th.Thread(target=self._thread_timer, args=(), name="TimerMain", daemon=True)
@@ -32,8 +32,7 @@ class TimerSkillProvider(BaseSkillProvider, BaseLogger):
         super().__del__()
 
         self.stop()
-        self._active = False
-        time.sleep(1)
+        self._stop_event.set()
         self._timer_thread.join()
         self.log("DTOR", "_timer_thread Joined!")
 
@@ -55,11 +54,8 @@ class TimerSkillProvider(BaseSkillProvider, BaseLogger):
 
     # タイマのスレッド関数
     def _thread_timer(self):
-        self._active = True
-
-        while (self._active):
+        while not self._stop_event.wait(1):
             self._timer_update()
-            time.sleep(1)
 
     # タイマの監視処理
 
