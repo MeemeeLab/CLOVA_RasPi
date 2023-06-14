@@ -29,7 +29,7 @@ class MusicSkillProvider(BaseSkillProvider, BaseLogger):
     def __init__(self):
         super().__init__()
         self.speaker_device_index = global_config_prov.get_general_config()["hardware"]["audio"]["speaker"]["index"]
-        self.stop_btn = SwitchInput(SwitchInput.PIN_BACK_SW_MUTE, lambda _: self._stop())
+        self.stop_btn = SwitchInput.init(SwitchInput.PIN_BACK_SW_MUTE, lambda _: self._stop())
         self._stop_flg = False
 
     # デストラクタ

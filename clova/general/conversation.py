@@ -1,3 +1,4 @@
+import datetime
 from typing import Dict, Tuple, Type
 
 from clova.processor.conversation.base_conversation import BaseConversationProvider
@@ -11,6 +12,7 @@ from clova.processor.skill.weather import WeatherSkillProvider
 from clova.processor.skill.line import LineSkillProvider
 from clova.processor.skill.datetime import DateTimeSkillProvider
 from clova.processor.skill.music import MusicSkillProvider
+from clova.processor.skill.alarm import AlarmSkillProvider
 
 from clova.general.queue import global_speech_queue
 from clova.config.config import global_config_prov
@@ -30,7 +32,8 @@ class ConversationController(BaseLogger):
         "Bard": BardConversationProvider
     }
     SKILL_MODULES: Tuple[BaseSkillProvider] = [
-        TimerSkillProvider(), NewsSkillProvider(), WeatherSkillProvider(), LineSkillProvider(), DateTimeSkillProvider(), MusicSkillProvider()
+        TimerSkillProvider(), NewsSkillProvider(), WeatherSkillProvider(), LineSkillProvider(),
+        DateTimeSkillProvider(), MusicSkillProvider(), AlarmSkillProvider()
     ]
 
     # コンストラクタ
@@ -77,6 +80,7 @@ class ConversationController(BaseLogger):
 
         if self.provider.supports_prompt_skill():
             actual_prompt = global_character_prov.get_character_prompt() + "\n" + GLOBAL_CHARACTER_CONFIG_PROMPT + "\n"
+            actual_prompt = actual_prompt.replace("{CURRENT_DATETIME}", datetime.datetime.now().strftime('%Y年%m月%d日 %H時%M分'))
             actual_prompt = actual_prompt.replace("{SKILL_LIST}", "\n".join(list(map(lambda skill: skill.get_prompt_addition(), self.SKILL_MODULES))))
             actual_prompt = actual_prompt.replace("{STT_RESULT}", prompt) + "\n"
         else:

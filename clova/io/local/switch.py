@@ -3,7 +3,11 @@ try:
 except BaseException:
     from fake_rpi.RPi import GPIO
 
+from clova.general.logger import Logger
+
 from clova.general.logger import BaseLogger
+
+ALIVE_SWITCH_INPUTS = {}
 
 # ==================================
 #           キー入力クラス
@@ -22,17 +26,37 @@ class SwitchInput(BaseLogger):
     KEY_UP = False
     KEY_DOWN = True
 
-    # コンストラクタ
     def __init__(self, pin, cb_func):
         super().__init__()
 
-        self.log("CTOR", "Pin={}".format(pin))
+        assert pin is None, "SwitchInput() is now obsolete; use SwitchInput.init() for further use"
+        assert cb_func is None, "SwitchInput() is now obsolete; use SwitchInput.init() for further use"
 
-        self._pin = pin
-        self.log("CTOR", "GPIO.setup({}, {}, {})".format(self._pin, GPIO.IN, GPIO.PUD_UP))
+        self._cb_list = []
+        self._pin = None
+
+    # コンストラクタ
+    def init(pin, cb_func):
+        logger = Logger("SwitchInput")
+
+        if pin in ALIVE_SWITCH_INPUTS:
+            logger.log("init", "Returning already existing SwitchInput; pin={}".format(pin))
+            ALIVE_SWITCH_INPUTS[pin]._cb_list.append(cb_func)
+            return ALIVE_SWITCH_INPUTS[pin]
+
+        cls = SwitchInput(None, None)
+        cls._pin = pin
+
+        cls._cb_list.append(cb_func)
+
+        cls.log("init", "GPIO.setup({}, {}, {})".format(cls._pin, GPIO.IN, GPIO.PUD_UP))
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(self._pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.add_event_detect(self._pin, GPIO.FALLING, callback=cb_func, bouncetime=200)
+        GPIO.setup(cls._pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.add_event_detect(cls._pin, GPIO.FALLING, callback=cls._internal_cb, bouncetime=200)
+
+        ALIVE_SWITCH_INPUTS[cls._pin] = cls
+
+        return cls
 
     # デストラクタ
     def __del__(self):
@@ -41,11 +65,16 @@ class SwitchInput(BaseLogger):
         self.log("DTOR", "Pin={}".format(self._pin))
         self.release()
 
+    def _internal_cb(self, pin):
+        for cb in self._cb_list:
+            cb(pin)
+
     # 解放処理
     def release(self):
         self.log("release", "Relase key({})".format(self._pin))
         GPIO.remove_event_detect(self._pin)
         GPIO.cleanup(self._pin)
+        del ALIVE_SWITCH_INPUTS[self._pin]
 
 # ==================================
 #       本クラスのテスト用処理

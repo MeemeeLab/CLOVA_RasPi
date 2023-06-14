@@ -8,6 +8,8 @@ from clova.config.config import global_config_prov
 from clova.general.logger import BaseLogger
 
 GLOBAL_CHARACTER_CONFIG_PROMPT = """
+{CURRENT_DATETIME}
+
 使用可能なスキル：
 ```
 {SKILL_LIST}
