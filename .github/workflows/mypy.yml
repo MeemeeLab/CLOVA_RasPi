@@ -5,6 +5,7 @@ on:
     paths:
       - '*.py'
       - '.github/workflows/**'
+      - 'requirements.ci.txt'
 
 jobs:
   mypy:
