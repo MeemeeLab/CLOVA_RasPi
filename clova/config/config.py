@@ -61,7 +61,7 @@ class ConfigurationProvider(BaseLogger):
             assert self.meets_requirements(self.requirements_config["stt"][self.general_config["apis"]["stt"]["system"]]["requires"]), "STT API Key requirements are not satisfied."
         if self.general_config["apis"]["conversation"]["system"] is not None:
             assert self.meets_requirements(self.requirements_config["conversation"][self.general_config["apis"]["conversation"]
-                                            ["system"]]["requires"]), "Conversation API Key requirements are not satisfied."
+                                           ["system"]]["requires"]), "Conversation API Key requirements are not satisfied."
 
     def meets_requirements(self, req: Tuple[Tuple[str]]) -> bool:
         for requirement_group in req:
