@@ -107,7 +107,7 @@ class CharacterProvider(BaseLogger):
 
             # 選択可のキャラクタまで行くか、一周したら抜ける
             if (
-                self._global_config_prov.is_requirements_met(self.get_requirements(self.character_index[num])) or num == self.current_character_num
+                self._global_config_prov.meets_requirements(self.get_requirements(self.character_index[num])) or num == self.current_character_num
             ):
                 break
 

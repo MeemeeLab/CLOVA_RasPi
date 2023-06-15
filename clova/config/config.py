@@ -56,14 +56,14 @@ class ConfigurationProvider(BaseLogger):
 
     def assert_current_config_requirements(self):
         if self.general_config["apis"]["tts"]["system"] is not None:
-            assert self.is_requirements_met(self.requirements_config["tts"][self.general_config["apis"]["tts"]["system"]]["requires"]), "TTS API Key requirements are not satisfied."
+            assert self.meets_requirements(self.requirements_config["tts"][self.general_config["apis"]["tts"]["system"]]["requires"]), "TTS API Key requirements are not satisfied."
         if self.general_config["apis"]["stt"]["system"] is not None:
-            assert self.is_requirements_met(self.requirements_config["stt"][self.general_config["apis"]["stt"]["system"]]["requires"]), "STT API Key requirements are not satisfied."
+            assert self.meets_requirements(self.requirements_config["stt"][self.general_config["apis"]["stt"]["system"]]["requires"]), "STT API Key requirements are not satisfied."
         if self.general_config["apis"]["conversation"]["system"] is not None:
-            assert self.is_requirements_met(self.requirements_config["conversation"][self.general_config["apis"]["conversation"]
+            assert self.meets_requirements(self.requirements_config["conversation"][self.general_config["apis"]["conversation"]
                                             ["system"]]["requires"]), "Conversation API Key requirements are not satisfied."
 
-    def is_requirements_met(self, req: Tuple[Tuple[str]]) -> bool:
+    def meets_requirements(self, req: Tuple[Tuple[str]]) -> bool:
         for requirement_group in req:
             # グループ内の要件のいずれかがos.environに存在するかをチェックします
             if any(requirement in os.environ and os.environ[requirement] != "" for requirement in requirement_group):
