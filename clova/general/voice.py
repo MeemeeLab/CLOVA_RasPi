@@ -7,7 +7,7 @@ import ffmpeg  # type: ignore[import]
 
 from subprocess import Popen
 
-from typing import Dict, Type, List, Optional, IO
+from typing import Dict, Type, List, Optional, IO, Tuple
 
 from clova.general.globals import global_led_ill, global_config_prov, global_character_prov, global_vol, global_speech_queue, global_debug_interface
 
@@ -233,7 +233,7 @@ class VoiceController(BaseLogger):
 
         return self.tts.tts(text, **self._tts_kwargs)
 
-    def _get_wav_info(self, wav_bytes: bytes) -> tuple[int, int, int]:
+    def _get_wav_info(self, wav_bytes: bytes) -> Tuple[int, int, int]:
         # Read the required fields from the header
         channels = int.from_bytes(wav_bytes[22:24], 'little')
         sample_rate = int.from_bytes(wav_bytes[24:28], 'little')

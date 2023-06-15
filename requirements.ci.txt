@@ -6,6 +6,7 @@ grpcio
 python-dotenv
 regex
 websockets
+numpy
 
 types-pyaudio
 types-regex
