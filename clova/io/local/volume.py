@@ -1,4 +1,5 @@
 from clova.general.logger import BaseLogger
+from clova.general.queue import SpeechQueue
 
 # ==================================
 #       ボリューム制御クラス
@@ -15,7 +16,7 @@ class VolumeController(BaseLogger):
     VOL_TABLE = [0.001, 0.01, 0.1, 0.15, 0.2, 0.3, 0.5, 0.8, 1.0, 1.2, 1.5, 1.8, 2.0]
 
     # コンストラクタ
-    def __init__(self, global_speech_queue):
+    def __init__(self, global_speech_queue: SpeechQueue) -> None:
         super().__init__()
 
         self._vol_step = 7
@@ -23,15 +24,15 @@ class VolumeController(BaseLogger):
         self._global_speech_queue = global_speech_queue
 
     # デストラクタ
-    def __del__(self):
+    def __del__(self) -> None:
         super().__del__()
 
-    def _speech_queue_cb(self):
+    def _speech_queue_cb(self) -> None:
         self._cb_waiting = False
         self._global_speech_queue.add("ボリュームを {} に設定しました。".format(str(self._vol_step)))
 
     # ボリューム [+] 押下時処理
-    def vol_up_cb(self, arg):
+    def vol_up_cb(self) -> None:
         if (self._vol_step < self.VOL_MAX_STEP):
             self._vol_step += 1
             self.vol_value = self.VOL_TABLE[self._vol_step]
@@ -42,7 +43,7 @@ class VolumeController(BaseLogger):
                 self._global_speech_queue.add(self._speech_queue_cb)
 
     # ボリューム [-] 押下時処理
-    def vol_down_cb(self, arg):
+    def vol_down_cb(self) -> None:
         if (self._vol_step > self.VOL_MIN_STEP):
             self._vol_step -= 1
             self.vol_value = self.VOL_TABLE[self._vol_step]
@@ -57,7 +58,7 @@ class VolumeController(BaseLogger):
 # ==================================
 
 
-def module_test():
+def module_test() -> None:
     # 現状何もしない
     pass
 

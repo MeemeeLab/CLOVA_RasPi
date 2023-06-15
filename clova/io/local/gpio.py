@@ -1,7 +1,7 @@
 try:
     import RPi.GPIO as GPIO
-except BaseException:
-    from fake_rpi.RPi import GPIO
+except ImportError:
+    from fake_rpi.RPi import GPIO  # type: ignore[no-redef]
 
 from clova.general.logger import BaseLogger
 
@@ -26,17 +26,17 @@ PIN_ILL_LED_ENA = 24
 
 class GPIOController(BaseLogger):
     # コンストラクタ
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.init()
 
     # デストラクタ
-    def __del__(self):
+    def __del__(self) -> None:
         super().__del__()
 
     # 初期化処理
-    def init():
+    def init(self) -> None:
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(PIN_BACK_SW_MINUS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         GPIO.setup(PIN_BACK_SW_PLUS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -48,7 +48,7 @@ class GPIOController(BaseLogger):
         GPIO.output(PIN_ILL_LED_ENA, GPIO.LOW)
 
     # 解放処理
-    def release():
+    def release(self) -> None:
         GPIO.cleanup(PIN_BACK_SW_MINUS)
         GPIO.cleanup(PIN_BACK_SW_PLUS)
         GPIO.cleanup(PIN_BACK_SW_BT)
@@ -61,7 +61,7 @@ class GPIOController(BaseLogger):
 # ==================================
 
 
-def module_test():
+def module_test() -> None:
     # 現状何もしない
     pass
 

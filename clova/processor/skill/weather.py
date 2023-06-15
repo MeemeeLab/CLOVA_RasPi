@@ -2,6 +2,8 @@ import re
 import requests
 import datetime
 
+from typing import Union
+
 from clova.general.globals import global_config_prov
 
 from clova.processor.skill.base_skill import BaseSkillProvider
@@ -87,20 +89,18 @@ area_codes = {
 
 class WeatherSkillProvider(BaseSkillProvider, BaseLogger):
     # コンストラクタ
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-        pass
-
     # デストラクタ
-    def __del__(self):
+    def __del__(self) -> None:
         super().__del__()
 
     def get_prompt_addition(self) -> str:
         return "WeatherSkillProvider: これは天気を返答するスキルです。 フォーマット: `CALL_TIMER [area_kanji] [today|tomorrow]`"
 
     # 天気 質問に答える。天気の問い合わせではなければ None を返す
-    def try_get_answer(self, request_text, use_stub):
+    def try_get_answer(self, prompt: str, use_stub: bool, **kwarg: str) -> Union[None, str]:
         if not use_stub:
             # 新スキルコードをサポートしている場合、前処理しない
             # Bardはかなり頭が悪いので新スキルコードを使えない
@@ -108,13 +108,13 @@ class WeatherSkillProvider(BaseSkillProvider, BaseLogger):
 
         self.log("try_get_answer", "stub! expect unreliable response from skill")
 
-        if (("天気を教えて" in request_text) or ("天気は" in request_text)):
+        if (("天気を教えて" in prompt) or ("天気は" in prompt)):
             # 天気情報を取得する日付のデフォルト値(今日の日付文字列)
             date_str = datetime.datetime.now().strftime("%Y-%m-%d")
             date = "きょう"
 
             # 明日か明後日かの場合はその日付文字列を取得する
-            match = re.search("(明日|あした|明後日|あさって)", request_text)
+            match = re.search("(明日|あした|明後日|あさって)", prompt)
             if match:
                 if match.group(1) in ["明日", "あした"]:
                     date_str = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
@@ -125,23 +125,23 @@ class WeatherSkillProvider(BaseSkillProvider, BaseLogger):
 
                 # 都市名を取得し、エリアコードを取得する
                 for area in area_codes.keys():
-                    if area in request_text:
+                    if area in prompt:
                         code = area_codes[area]
                         break
 
                 # 都市名が見つからない場合は空で返す
                 else:
-                    answer_text = "エリア名が不明です。天気を取得したいエリアを指定してください"
-                    self.log("try_get_answer", answer_text)
-                    return answer_text
+                    return "エリア名が不明です。天気を取得したいエリアを指定してください"
 
-                self.process(date, date_str, area, code)
+                return self.process(date, date_str, area, code)
+
+            return None
         else:
             # 該当がない場合は空で返信
             self.log("try_get_answer", "No Keyword for Weather")
             return None
 
-    def process(self, date, date_str, area, code):
+    def process(self, date: str, date_str: str, area: str, code: str) -> str:
         # APIから天気情報を取得する
         url = f"https://www.jma.go.jp/bosai/forecast/data/forecast/{code}.json"
         self.log("try_get_answer", "URL={}".format(url))
@@ -168,31 +168,33 @@ class WeatherSkillProvider(BaseSkillProvider, BaseLogger):
         self.log("try_get_answer", answer_text)
         return answer_text
 
-    def try_get_answer_post_process(self, response):
-        if response.startswith("CALL_WEATHER"):
-            args = response.split("\n")[0].split(" ")
-            if args[2] == "today":
-                date_str = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
-                date = "あした"
-            else:
-                date_str = (datetime.datetime.now() + datetime.timedelta(days=2)).strftime("%Y-%m-%d")
-                date = "あさって"
+    def try_get_answer_post_process(self, response: str) -> Union[None, str]:
+        if not response.startswith("CALL_WEATHER"):
+            return None
 
-            # 都市名を取得し、エリアコードを取得する
-            for area in area_codes.keys():
-                if area in args[1]:
-                    code = area_codes[area]
-                    break
+        args = response.split("\n")[0].split(" ")
+        if args[2] == "today":
+            date_str = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+            date = "あした"
+        else:
+            date_str = (datetime.datetime.now() + datetime.timedelta(days=2)).strftime("%Y-%m-%d")
+            date = "あさって"
 
-            # 都市名が見つからない場合は空で返す
-            else:
-                answer_text = "エリア名が不明です。天気を取得したいエリアを指定してください"
-                self.log("try_get_answer_post_process", answer_text)
-                return answer_text
+        # 都市名を取得し、エリアコードを取得する
+        for area in area_codes.keys():
+            if area in args[1]:
+                code = area_codes[area]
+                break
 
-            return self.process(date, date_str, area, code)
+        # 都市名が見つからない場合は空で返す
+        else:
+            answer_text = "エリア名が不明です。天気を取得したいエリアを指定してください"
+            self.log("try_get_answer_post_process", answer_text)
+            return answer_text
 
-    def print_areas(self):
+        return self.process(date, date_str, area, code)
+
+    def print_areas(self) -> None:
         response = requests.get("https://www.jma.go.jp/bosai/common/const/area.json")
         response_data = response.json()
         for code in response_data["centers"]:
@@ -207,10 +209,10 @@ class WeatherSkillProvider(BaseSkillProvider, BaseLogger):
 # ==================================
 
 
-def module_test():
+def module_test() -> None:
     weather = WeatherSkillProvider()
     # weather.PrintAreas()
-    weather.try_get_answer("明日の東京の天気を教えて")
+    weather.try_get_answer("明日の東京の天気を教えて", True)
 
 
 # ==================================

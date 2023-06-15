@@ -4,5 +4,5 @@ from typing import Union
 
 class BaseTTSProvider(ABC):
     @abstractmethod
-    def tts(self, text, **kwargs) -> Union[bytes, None]:
+    def tts(self, text: str, **kwargs: str) -> Union[bytes, None]:
         pass

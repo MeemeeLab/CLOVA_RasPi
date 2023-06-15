@@ -1,4 +1,6 @@
-import speech_recognition
+import speech_recognition  # type: ignore[import]
+
+from typing import Union
 
 from clova.processor.stt.base_stt import BaseSTTProvider
 
@@ -8,15 +10,13 @@ GOOGLE_SPEECH_RATE = 16000
 
 
 class SpeechRecognitionGoogleSTTProvider(BaseSTTProvider, BaseLogger):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-        pass
-
-    def __del__(self):
+    def __del__(self) -> None:
         super().__del__()
 
-    def stt(self, audio, **kwargs):
+    def stt(self, audio: bytes, **kwargs: str) -> Union[None, str]:
         self.log("stt", "音声からテキストに変換中(Speech Recognition)")
 
         # 録音した音声データをGoogle Speech Recognitionでテキストに変換する
@@ -24,7 +24,7 @@ class SpeechRecognitionGoogleSTTProvider(BaseSTTProvider, BaseLogger):
         audio_data = speech_recognition.AudioData(audio, sample_rate=GOOGLE_SPEECH_RATE, sample_width=2)
 
         try:
-            result = recognizer.recognize_google(audio_data, language=kwargs["language"])
+            result: str = recognizer.recognize_google(audio_data, language=kwargs["language"])
         except Exception:
             return None
 

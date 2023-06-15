@@ -1,11 +1,13 @@
 import time
 
+from typing import Union, Literal, Tuple, List
+
 try:
     import RPi.GPIO as GPIO
     import smbus
-except BaseException:
-    from fake_rpi.RPi import GPIO
-    from fake_rpi import smbus
+except ImportError:
+    from fake_rpi.RPi import GPIO  # type: ignore[no-redef]
+    from fake_rpi import smbus  # type: ignore[no-redef]
 
 from clova.general.logger import BaseLogger
 
@@ -33,20 +35,20 @@ class IndicatorLed(BaseLogger):
     LED_ON = True
 
     # コンストラクタ
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(PIN_IND_LED_G, GPIO.OUT)
 
     # デストラクタ
-    def __del__(self):
+    def __del__(self) -> None:
         super().__del__()
 
         GPIO.cleanup(PIN_IND_LED_G)
 
     # LEDインディケーター On/Off
-    def set_led(self, onoff, pin=PIN_IND_LED_G):
+    def set_led(self, onoff: Union[Literal[0], Literal[1]], pin: int = PIN_IND_LED_G) -> None:
         GPIO.output(pin, onoff)
 
 # ==================================
@@ -71,29 +73,29 @@ class IllminationLed(BaseLogger):
         [0x04, 0x24, 0x44], [0x14, 0x34, 0x54],
         [0x03, 0x23, 0x43], [0x13, 0x33, 0x53]
     ]
-    RGB_OFF = [0x00, 0x00, 0x00]
-    RGB_BLACK = [0x00, 0x00, 0x00]
-    RGB_RED = [0xFF, 0x00, 0x00]
-    RGB_DARKGREEN = [0x00, 0x1F, 0x00]
-    RGB_GREEN = [0x00, 0xFF, 0x00]
-    RGB_BLUE = [0x00, 0x00, 0xFF]
-    RGB_ORANGE = [0xFF, 0x7F, 0x00]
-    RGB_YELLOW = [0xFF, 0xFF, 0x00]
-    RGB_PINK = [0xFF, 0x00, 0xFF]
-    RGB_CYAN = [0x00, 0xFF, 0xFF]
+    RGB_OFF = (0x00, 0x00, 0x00)
+    RGB_BLACK = (0x00, 0x00, 0x00)
+    RGB_RED = (0xFF, 0x00, 0x00)
+    RGB_DARKGREEN = (0x00, 0x1F, 0x00)
+    RGB_GREEN = (0x00, 0xFF, 0x00)
+    RGB_BLUE = (0x00, 0x00, 0xFF)
+    RGB_ORANGE = (0xFF, 0x7F, 0x00)
+    RGB_YELLOW = (0xFF, 0xFF, 0x00)
+    RGB_PINK = (0xFF, 0x00, 0xFF)
+    RGB_CYAN = (0x00, 0xFF, 0xFF)
     RGB_LIST = [RGB_OFF, RGB_BLACK, RGB_RED, RGB_DARKGREEN, RGB_GREEN, RGB_BLUE, RGB_ORANGE, RGB_YELLOW, RGB_PINK, RGB_CYAN]
 
     ALL_BITS = 0xFFFFFFF
 
     # コンストラクタ
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.is_available = False
         self.init()
 
     # デストラクタ
-    def __del__(self):
+    def __del__(self) -> None:
         super().__del__()
 
         try:
@@ -103,7 +105,7 @@ class IllminationLed(BaseLogger):
             self.log("DTOR", "デストラクト <IllminationLed> 失敗; もうすでにデストラクタ呼ばれた？")
 
     # 初期化処理
-    def init(self):
+    def init(self) -> None:
         # Initialize Lib
         GPIO.setmode(GPIO.BCM)
         try:
@@ -170,15 +172,15 @@ class IllminationLed(BaseLogger):
             self._i2c.write_byte_data(self.SLAVE_ADDR, 0x17, 0x00)
 
     # コマンドヘッダーの送信
-    def send_command_header(self):
+    def send_command_header(self) -> None:
         if (self.is_available):
             self._i2c.write_byte_data(self.SLAVE_ADDR, 0xFE, 0xC5)
             self._i2c.write_byte_data(self.SLAVE_ADDR, 0xFD, 0x01)
         else:
             self.log("send_command_header", "LED Device unavailable!")
 
-    # ビット指定でRGB食を指定設定
-    def set_leds_with_bit_mask(self, bits, rgb_color):
+    # ビット指定でRGB色を指定設定
+    def set_leds_with_bit_mask(self, bits: int, rgb_color: Tuple[int, int, int]) -> None:
         if (self.is_available):
             self.send_command_header()
             for num in range(len(self.REG_ADDRESS_TABLE)):
@@ -193,7 +195,7 @@ class IllminationLed(BaseLogger):
             self.log("set_leds_with_bit_mask", "LED Device unavailable!")
 
     # 配列指定ですべての LED を設定する
-    def set_all_led_with_array(self, rgb_data):
+    def set_all_led_with_array(self, rgb_data: Tuple[Tuple[int, int, int]]) -> None:
         if (self.is_available):
             self.send_command_header()
             for num in range(len(rgb_data)):
@@ -202,11 +204,11 @@ class IllminationLed(BaseLogger):
         else:
             self.log("set_all_led_with_array", "LED Device unavailable!")
 
-    def set_all(self, rgb):
+    def set_all(self, rgb: Tuple[int, int, int]) -> None:
         self.set_leds_with_bit_mask(self.ALL_BITS, rgb)
 
     # 終了処理
-    def finalize(self):
+    def finalize(self) -> None:
         GPIO.cleanup(PIN_ILL_LED_POW)
         GPIO.cleanup(PIN_ILL_LED_ENA)
         self.log("finalize", "Finalize")
@@ -217,7 +219,7 @@ class IllminationLed(BaseLogger):
 # ==================================
 
 
-def load_illumi_data(data_bytes, child_length, grandchild_length):
+def load_illumi_data(data_bytes: bytes, child_length: int, grandchild_length: int) -> List[List[List[int]]]:
     result = []
     current_index = 0
 
@@ -239,7 +241,7 @@ def load_illumi_data(data_bytes, child_length, grandchild_length):
 #     return bytes(flattened)
 
 
-def module_test():
+def module_test() -> None:
     with open('./assets/illumi_test.bin', 'rb') as file:
         data_bytes = file.read()
     illumi_data = load_illumi_data(data_bytes, 22, 3)
@@ -252,7 +254,7 @@ def module_test():
     ill_led.set_all(ill_led.RGB_BLACK)
 
     for step in range(len(illumi_data)):
-        ill_led.set_all_led_with_array(illumi_data[step])
+        ill_led.set_all_led_with_array(illumi_data[step])  # type: ignore[arg-type]
         time.sleep(0.05)
 
 

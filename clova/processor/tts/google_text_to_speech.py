@@ -1,5 +1,7 @@
 from google.cloud import texttospeech as tts
 
+from typing import Union
+
 from clova.processor.tts.base_tts import BaseTTSProvider
 
 from clova.general.logger import BaseLogger
@@ -14,15 +16,15 @@ class GoogleTextToSpeechTTSProvider(BaseTTSProvider, BaseLogger):
         "NEUTRAL": tts.SsmlVoiceGender.NEUTRAL
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self._client_tts = tts.TextToSpeechClient()
 
-    def __del__(self):
+    def __del__(self) -> None:
         super().__del__()
 
-    def tts(self, text, **kwargs):
+    def tts(self, text: str, **kwargs: str) -> Union[None, bytes]:
         self.log("tts", "音声合成中(Google TTS)")
 
         # テキスト入力

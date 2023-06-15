@@ -8,9 +8,9 @@ class BaseSkillProvider(ABC):
         pass
 
     @abstractmethod
-    def try_get_answer(self, prompt, use_stub, **kwargs) -> Union[str, None]:
+    def try_get_answer(self, prompt: str, use_stub: bool, **kwargs: str) -> Union[str, None]:
         pass
 
     @abstractmethod
-    def try_get_answer_post_process(self, response) -> Union[str, None]:
+    def try_get_answer_post_process(self, response: str) -> Union[str, None]:
         pass

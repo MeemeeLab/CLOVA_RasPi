@@ -4,11 +4,13 @@ import platform
 
 from clova.general.logger import BaseLogger
 
+from typing import Tuple
+
 BASE_CONF_PATH = os.path.expanduser("~/.config")
 
 
 class Database(BaseLogger):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         if platform.system() == "Linux":
@@ -27,15 +29,15 @@ class Database(BaseLogger):
 
         self.connect_db()
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.conn.close()
         return super().__del__()
 
-    def connect_db(self):
+    def connect_db(self) -> None:
         self.log("connect_db", "Connecting to sqlite3 db: {}".format(self.db_path))
         self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
 
-    def execute(self, query, commit):
+    def execute(self, query: str, commit: bool) -> Tuple[Tuple[object]]:
         self.log("execute", "> {}".format(query))
 
         cur = self.conn.cursor()
@@ -47,4 +49,4 @@ class Database(BaseLogger):
             self.conn.commit()
 
         cur.close()
-        return result
+        return result  # type: ignore[return-value]

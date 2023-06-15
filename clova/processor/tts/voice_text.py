@@ -1,21 +1,23 @@
 import os
 import requests
 
+from typing import Union
+
 from clova.processor.tts.base_tts import BaseTTSProvider
 
 from clova.general.logger import BaseLogger
 
 
 class VoiceTextTTSProvider(BaseTTSProvider, BaseLogger):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.voice_text_api_key = os.environ["VOICE_TEXT_API_KEY"]
 
-    def __del__(self):
+    def __del__(self) -> None:
         super().__del__()
 
-    def tts(self, text, **kwargs):
+    def tts(self, text: str, **kwargs: str) -> Union[None, bytes]:
         self.log("tts", "音声合成中(VoiceText)")
 
         # 音声合成設定

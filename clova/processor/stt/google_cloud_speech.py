@@ -1,5 +1,7 @@
 from google.cloud import speech_v1p1beta1 as speech
 
+from typing import Union
+
 from clova.general.globals import global_config_prov
 
 from clova.processor.stt.base_stt import BaseSTTProvider
@@ -10,15 +12,15 @@ from clova.general.logger import BaseLogger
 class GoogleCloudSpeechSTTProvider(BaseSTTProvider, BaseLogger):
     GOOGLE_SPEECH_RATE = 16000
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self._client_speech = speech.SpeechClient()
 
-    def __del__(self):
+    def __del__(self) -> None:
         super().__del__()
 
-    def stt(self, audio, **kwargs):
+    def stt(self, audio: bytes, **kwargs: str) -> Union[None, str]:
         self.log("stt", "音声からテキストに変換中(Google Cloud Speech)")
 
         # Speech-to-Text の認識設定

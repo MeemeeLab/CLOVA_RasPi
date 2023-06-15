@@ -11,3 +11,8 @@ python-dotenv
 git+https://github.com/dsdanielpark/Bard-API
 regex
 websockets
+
+types-pyaudio
+types-regex
+types-requests
+types-beautifulsoup4

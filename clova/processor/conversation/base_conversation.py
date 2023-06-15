@@ -4,7 +4,7 @@ from typing import Union
 
 class BaseConversationProvider(ABC):
     @abstractmethod
-    def set_persona(self, prompt, **kwargs) -> None:
+    def set_persona(self, prompt: str, **kwargs: str) -> None:
         pass
 
     @abstractmethod
@@ -12,5 +12,5 @@ class BaseConversationProvider(ABC):
         pass
 
     @abstractmethod
-    def get_answer(self, prompt, **kwargs) -> Union[str, None]:
+    def get_answer(self, prompt: str, **kwargs: str) -> Union[str, None]:
         pass

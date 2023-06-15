@@ -16,7 +16,7 @@ import platform
 import time
 
 
-def main():
+def main() -> None:
     logger = Logger("LAUNCHER")
 
     # 会話モジュールのインスタンス作成
@@ -37,13 +37,11 @@ def main():
 
     # キー準備
     char_switch = SwitchInput.init(SwitchInput.PIN_BACK_SW_BT, lambda _: global_character_prov.select_next_character())
-    plus_switch = SwitchInput.init(SwitchInput.PIN_BACK_SW_PLUS, global_vol.vol_up_cb)
-    minus_switch = SwitchInput.init(SwitchInput.PIN_BACK_SW_MINUS, global_vol.vol_down_cb)
+    plus_switch = SwitchInput.init(SwitchInput.PIN_BACK_SW_PLUS, lambda _: global_vol.vol_up_cb())
+    minus_switch = SwitchInput.init(SwitchInput.PIN_BACK_SW_MINUS, lambda _: global_vol.vol_down_cb())
 
     # タイマ準備
     tmr = TimerSkillProvider()
-    conv.tmr = tmr
-    # tmr.Start()
 
     debug_interface_messages = []
     global_debug_interface.bind_message_callback(lambda message: debug_interface_messages.append(message))
@@ -56,10 +54,10 @@ def main():
 
     # メインループ
     while True:
-        int_exists, str_or_func = conv.check_for_interrupted_voice()
+        str_or_func = conv.check_for_interrupted_voice()
 
         # 割り込み音声ありの時
-        if int_exists and str_or_func is not None:
+        if str_or_func is not None:
             if callable(str_or_func):
                 str_or_func()
                 continue
@@ -83,9 +81,13 @@ def main():
                 time.sleep(10)
                 record_data = b""
 
-            if debug_interface_messages:
+            stt_result = None
+
+            if len(debug_interface_messages):
                 # デバッグインタフェースからのメッセージ
                 stt_result = debug_interface_messages.pop(0)
+            elif record_data is None:
+                continue
             else:
                 # テキストに返還
                 stt_result = voice.speech_to_text(record_data)

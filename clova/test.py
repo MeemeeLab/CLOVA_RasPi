@@ -4,8 +4,8 @@ import threading
 import time
 try:
     import RPi.GPIO as GPIO
-except BaseException:
-    from fake_rpi.RPi import GPIO
+except ImportError:
+    from fake_rpi.RPi import GPIO  # type: ignore[no-redef]
 import pyaudio as PyAudio
 
 sys.path.append(os.getcwd())
@@ -33,16 +33,16 @@ PIN_LED_B = 6
 class TestClass:
 
     # コンストラクタ
-    def __init__(self):
+    def __init__(self) -> None:
         print("Create <TestClass> class")
         self.is_active = False
 
     # デストラクタ
-    def __del__(self):
+    def __del__(self) -> None:
         # 現状ログ出すだけ
         print("Delete <TestClass> class")
 
-    def task_test_playback(self):
+    def task_test_playback(self) -> None:
         voice = VoiceController()
         global_speech_queue.clear()
         while (self.is_active):
@@ -50,13 +50,16 @@ class TestClass:
 
             time.sleep(0.5)
 
+            if not audio:
+                continue
+
             print("再生開始")
             voice.play_audio(audio)
             print("再生終了")
 
             time.sleep(1.5)
 
-    def task_test_gpio(self):
+    def task_test_gpio(self) -> None:
         sw_front_before = -1
         sw_back_minus_before = -1
         sw_back_plus_before = -1
@@ -150,7 +153,7 @@ class TestClass:
         GPIO.cleanup(PIN_LED_G)
         GPIO.cleanup(PIN_LED_B)
 
-    def scan_indexes(self):
+    def scan_indexes(self) -> None:
         pyaud = PyAudio.PyAudio()
 
         print("デバイスインデックス総数: {0}".format(pyaud.get_device_count()))
@@ -163,7 +166,7 @@ class TestClass:
 
             # print("{}:{},{},{}".format(json_data["index"],json_data["name"],json_data["maxInputChannels"],json_data["maxOutputChannels"])) #デバッグ用
             if ((json_data["name"] == "dmic_hw") and (json_data["maxInputChannels"] != 0) and (json_data["maxOutputChannels"] != 0)):
-                found_index = json_data["index"]
+                found_index = int(json_data["index"])
 
         if (found_index != -1):
             print("入力(MIC)デバイスインデックス = {}".format(found_index))
@@ -175,7 +178,7 @@ class TestClass:
 # ==================================
 #       本クラスのテスト用処理
 # ==================================
-def module_test():
+def module_test() -> None:
     # 呼び出し引数チェック
     if ((len(sys.argv) == 2) and (sys.argv[1] != "-h") and (sys.argv[1] != "--help")):
         test = TestClass()

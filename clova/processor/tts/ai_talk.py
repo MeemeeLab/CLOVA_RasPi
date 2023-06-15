@@ -1,22 +1,24 @@
 import os
 import requests
 
+from typing import Union
+
 from clova.general.logger import BaseLogger
 
 from clova.processor.tts.base_tts import BaseTTSProvider
 
 
 class AITalkTTSProvider(BaseTTSProvider, BaseLogger):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.aitalk_user = os.environ["AITALK_USER"]
         self.aitalk_password = os.environ["AITALK_PASSWORD"]
 
-    def __del__(self):
+    def __del__(self) -> None:
         super().__del__()
 
-    def tts(self, text, **kwargs):
+    def tts(self, text: str, **kwargs: str) -> Union[None, bytes]:
         self.log("tts", "音声合成中(AITalk)")
 
         # 音声合成設定

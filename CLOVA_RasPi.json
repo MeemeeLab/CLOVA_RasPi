@@ -22,7 +22,6 @@
 			}
 		}
 	},
-	"persona_override": null,
 	"hardware": {
 		"audio": {
 			"microphone": {

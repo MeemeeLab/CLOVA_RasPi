@@ -1,4 +1,5 @@
 from collections import deque
+from typing import Deque, Union, Callable
 import regex as re
 
 from clova.general.logger import BaseLogger
@@ -12,17 +13,17 @@ class SpeechQueue(BaseLogger):
     REGEX_ASSUME_EMPTY = re.compile("^[\\p{P}|\\p{S}|\\p{Z}|\n]*$")
 
     # コンストラクタ
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-        self._queue = deque()
+        self._queue: Deque[Union[str, Callable[[], None]]] = deque()
 
     # デストラクタ
-    def __del__(self):
+    def __del__(self) -> None:
         super().__del__()
 
     # 文字列・関数をキューに格納する
-    def add(self, str_or_func):
+    def add(self, str_or_func: Union[str, Callable[[], None]]) -> None:
         if callable(str_or_func):
             self.log("add", "SpeechQueue += function()")
             self._queue.append(str_or_func)
@@ -34,13 +35,13 @@ class SpeechQueue(BaseLogger):
         self._queue.append(str_or_func)
 
     # キューから文字列・関数を取得する
-    def get(self):
+    def get(self) -> Union[str, Callable[[], None]]:
         return self._queue.popleft()
 
-    def clear(self):
+    def clear(self) -> None:
         self._queue.clear()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._queue)
 
 
@@ -49,7 +50,7 @@ class SpeechQueue(BaseLogger):
 # ==================================
 
 
-def module_test():
+def module_test() -> None:
     # 現状何もしない
     pass
 

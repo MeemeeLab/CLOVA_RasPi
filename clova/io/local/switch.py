@@ -1,13 +1,13 @@
 try:
     import RPi.GPIO as GPIO
-except BaseException:
-    from fake_rpi.RPi import GPIO
+except ImportError:
+    from fake_rpi.RPi import GPIO  # type: ignore[no-redef]
+
+from typing import Dict, Callable, List, Optional
 
 from clova.general.logger import Logger
 
 from clova.general.logger import BaseLogger
-
-ALIVE_SWITCH_INPUTS = {}
 
 # ==================================
 #           キー入力クラス
@@ -26,17 +26,15 @@ class SwitchInput(BaseLogger):
     KEY_UP = False
     KEY_DOWN = True
 
-    def __init__(self, pin, cb_func):
+    def __init__(self) -> None:
         super().__init__()
 
-        assert pin is None, "SwitchInput() is now obsolete; use SwitchInput.init() for further use"
-        assert cb_func is None, "SwitchInput() is now obsolete; use SwitchInput.init() for further use"
-
-        self._cb_list = []
-        self._pin = None
+        self._cb_list: List[Callable[[int], None]] = []
+        self._pin: Optional[int] = None
 
     # コンストラクタ
-    def init(pin, cb_func):
+    @staticmethod
+    def init(pin: int, cb_func: Callable[[int], None]) -> "SwitchInput":
         logger = Logger("SwitchInput")
 
         if pin in ALIVE_SWITCH_INPUTS:
@@ -44,7 +42,7 @@ class SwitchInput(BaseLogger):
             ALIVE_SWITCH_INPUTS[pin]._cb_list.append(cb_func)
             return ALIVE_SWITCH_INPUTS[pin]
 
-        cls = SwitchInput(None, None)
+        cls = SwitchInput()
         cls._pin = pin
 
         cls._cb_list.append(cb_func)
@@ -59,29 +57,36 @@ class SwitchInput(BaseLogger):
         return cls
 
     # デストラクタ
-    def __del__(self):
+    def __del__(self) -> None:
         super().__del__()
 
         self.log("DTOR", "Pin={}".format(self._pin))
         self.release()
 
-    def _internal_cb(self, pin):
+    def _internal_cb(self, pin: int) -> None:
         for cb in self._cb_list:
             cb(pin)
 
     # 解放処理
-    def release(self):
+    def release(self) -> None:
+        if self._pin is None:
+            return
+
         self.log("release", "Relase key({})".format(self._pin))
         GPIO.remove_event_detect(self._pin)
         GPIO.cleanup(self._pin)
         del ALIVE_SWITCH_INPUTS[self._pin]
+
+
+ALIVE_SWITCH_INPUTS: Dict[int, SwitchInput] = {}
+
 
 # ==================================
 #       本クラスのテスト用処理
 # ==================================
 
 
-def module_test():
+def module_test() -> None:
     # 現状何もしない
     pass
 

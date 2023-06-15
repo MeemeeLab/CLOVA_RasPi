@@ -1,6 +1,9 @@
 import re
 import requests
 import time
+
+from typing import Union
+
 from bs4 import BeautifulSoup
 
 from clova.general.globals import global_config_prov
@@ -32,20 +35,20 @@ NEWS_URL_STRING = "https://news.yahoo.co.jp/"
 
 class NewsSkillProvider(BaseSkillProvider, BaseLogger):
     # コンストラクタ
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self._news_count = 0
 
     # デストラクタ
-    def __del__(self):
+    def __del__(self) -> None:
         super().__del__()
 
     def get_prompt_addition(self) -> str:
         return "NewsSkillProvider: これは最新のニュースを返答するスキルです。 フォーマット: `CALL_NEWS <トップ|国内|国際|ビジネス|エンタメ|スポーツ|科学|地域|コンピュータ|インターネット|社会>`"
 
     # ニュース 質問に答える。ニュースの問い合わせではなければ None を返す
-    def try_get_answer(self, request_text, use_stub):
+    def try_get_answer(self, prompt: str, use_stub: bool, **kwarg: str) -> Union[None, str]:
         # 前回がニュースで無ければ
         if (self._news_count == 0):
             if not use_stub:
@@ -55,7 +58,7 @@ class NewsSkillProvider(BaseSkillProvider, BaseLogger):
 
             self.log("try_get_answer", "stub! expect unreliable response from skill")
 
-            match = re.match("(.+)ニュース.*教えて", request_text)
+            match = re.match("(.+)ニュース.*教えて", prompt)
             if match is not None:
                 category = match.group(1)
                 if category in CATEGORY_URL_TABLE:
@@ -72,12 +75,12 @@ class NewsSkillProvider(BaseSkillProvider, BaseLogger):
                 return None
         # 前回がニュースであれば番号を選択する
         else:
-            if (("終わり" in request_text) or ("おわり" in request_text)):
+            if (("終わり" in prompt) or ("おわり" in prompt)):
                 answer_text = "ニュースを終わります"
                 self._news_count = 0
                 return (answer_text)
 
-            match = re.match("(\\d+)", request_text)
+            match = re.match("(\\d+)", prompt)
             if match is not None:
                 selected_num = int(match.group(1))
                 if (1 <= selected_num <= self._news_count):
@@ -98,10 +101,13 @@ class NewsSkillProvider(BaseSkillProvider, BaseLogger):
                     detail_soup = BeautifulSoup(detail_body.text, "html.parser")
 
                     # 記事本文のタイトルを表示する
+                    assert detail_soup.title
                     self.log("try_get_answer", "Detail title = {}".format(detail_soup.title.text))
 
                     # class属性の中に「Direct」が含まれる行を抽出する
-                    news_detail = detail_soup.find(class_=re.compile("Direct")).text
+                    direct = detail_soup.find(class_=re.compile("Direct"))
+                    assert direct
+                    news_detail = direct.text
 
                     if global_config_prov.verbose():
                         self.log("try_get_answer", "Detail text ={}".format(news_detail))
@@ -110,8 +116,9 @@ class NewsSkillProvider(BaseSkillProvider, BaseLogger):
                 else:
                     answer_text = "番号が不正または範囲外です。\n詳細を知りたい番号を1から{}で選んでください。\n終了するには終わりと言ってください。".format(str(self._news_count))
                     return answer_text
+        return None
 
-    def _start(self, category):
+    def _start(self, category: str) -> str:
         url = CATEGORY_URL_TABLE[category]
         self.log("_start", "Getting {} News!!".format(category))
         response = requests.get(url)
@@ -136,10 +143,12 @@ class NewsSkillProvider(BaseSkillProvider, BaseLogger):
 
         return news_headlines
 
-    def try_get_answer_post_process(self, response):
-        if response.startswith("CALL_NEWS"):
-            args = response.split("\n")[0].split(" ")
-            return self._start(args[1])
+    def try_get_answer_post_process(self, response: str) -> Union[None, str]:
+        if not response.startswith("CALL_NEWS"):
+            return None
+
+        args = response.split("\n")[0].split(" ")
+        return self._start(args[1])
 
 
 # ==================================
@@ -147,13 +156,13 @@ class NewsSkillProvider(BaseSkillProvider, BaseLogger):
 # ==================================
 
 
-def module_test():
+def module_test() -> None:
     news = NewsSkillProvider()
-    news_text = news.try_get_answer("国際ニュースを教えて")
+    news_text = news.try_get_answer("国際ニュースを教えて", True)
     print(news_text)
     time.sleep(5)
 
-    news_text = news.try_get_answer("1番")
+    news_text = news.try_get_answer("1番", True)
     print(news_text)
 
 

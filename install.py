@@ -2,8 +2,8 @@ import os
 import pwd
 import sys
 
-username = pwd.getpwuid(os.getuid()).pw_name
-group_id = str(os.getgid())
+username = pwd.getpwuid(os.getuid()).pw_name  # type: ignore[attr-defined]
+group_id = str(os.getgid())  # type: ignore[attr-defined]
 
 if username == "root":
     if len(sys.argv) != 3:

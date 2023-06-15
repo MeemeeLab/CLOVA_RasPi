@@ -1,5 +1,8 @@
 import socketserver
+import http
 import threading as th
+
+from typing import Type
 
 from clova.processor.skill.line import HttpReqLineHandler
 
@@ -12,19 +15,19 @@ from clova.general.logger import BaseLogger
 
 class HttpServer(BaseLogger):
     # コンストラクタ
-    def __init__(self, port, handler):
+    def __init__(self, port: int, handler: Type[http.server.BaseHTTPRequestHandler]) -> None:
         self._port = port
         self._handler = handler
         th.Thread(target=self.serve, args=(), name="HttpServerProcess", daemon=True).start()
 
     # デストラクタ
-    def __del__(self):
+    def __del__(self) -> None:
         super().__del__()
 
         self.httpd.shutdown()
 
     # HTTPサーバーのメイン処理：起動したあとは、MyHandler で待ち受けているだけ
-    def serve(self):
+    def serve(self) -> None:
         # 8080 番ポートで受け付ける
         self.httpd = socketserver.TCPServer(("", self._port), self._handler)
         self.httpd.serve_forever()
@@ -35,7 +38,7 @@ class HttpServer(BaseLogger):
 # ==================================
 
 
-def module_test():
+def module_test() -> None:
     # インスタンス作成
     HttpServer(8080, HttpReqLineHandler)
 

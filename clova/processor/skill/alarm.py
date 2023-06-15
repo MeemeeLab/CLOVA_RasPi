@@ -1,6 +1,8 @@
 import threading as th
 import datetime
 
+from typing import Union
+
 from clova.general.globals import global_speech_queue, global_db
 
 from clova.processor.skill.base_skill import BaseSkillProvider
@@ -20,7 +22,7 @@ CREATE TABLE IF NOT EXISTS alarms (
 
 class AlarmSkillProvider(BaseSkillProvider, BaseLogger):
     # コンストラクタ
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self._watchdog_stop = th.Event()
@@ -32,11 +34,11 @@ class AlarmSkillProvider(BaseSkillProvider, BaseLogger):
 
         self.init_db()
 
-    def init_db(self):
+    def init_db(self) -> None:
         global_db.execute(DATABASE_INIT, True)
 
     # デストラクタ
-    def __del__(self):
+    def __del__(self) -> None:
         super().__del__()
 
         self._watchdog_stop.set()
@@ -48,13 +50,13 @@ class AlarmSkillProvider(BaseSkillProvider, BaseLogger):
         return "AlarmSkillProvider: これは指定時間に自動鳴動するスキルです。 時刻はISO 8601フォーマットです。 例：`2023-06-02T19:57:10+09:00` フォーマット: `CALL_ALARM <(iso8601)|delete_all>`"
 
     # タイマのスレッド関数
-    def _thread_watchdog(self):
+    def _thread_watchdog(self) -> None:
         while not self._watchdog_stop.wait(1):
             self._watchdog_update()
 
     # タイマの監視処理
 
-    def _watchdog_update(self):
+    def _watchdog_update(self) -> None:
         result = global_db.execute("SELECT id FROM alarms WHERE alarm_ts < strftime('%s', 'now') LIMIT 1", False)
         if len(result) and len(result[0]):
             id = result[0][0]
@@ -62,7 +64,7 @@ class AlarmSkillProvider(BaseSkillProvider, BaseLogger):
             global_db.execute("DELETE FROM alarms WHERE id = '{}'".format(id), True)
             self.alarm()
 
-    def alarm(self):
+    def alarm(self) -> None:
         dt = datetime.datetime.now()
         global_speech_queue.add("現在時刻は{}、です。ミュートボタンを押してアラームを停止します。".format(dt.strftime("%H時%M分")))
 
@@ -73,48 +75,52 @@ class AlarmSkillProvider(BaseSkillProvider, BaseLogger):
         global_speech_queue.add(self.alarm)
 
     # タイマーの 要求に答える。タイマーの要求ではなければ None を返す
-    def try_get_answer(self, request_text, use_stub):
+    def try_get_answer(self, prompt: str, use_stub: bool, **kwarg: str) -> Union[None, str]:
         if not use_stub:
             # 新スキルコードをサポートしている場合、前処理しない
             # Bardはかなり頭が悪いので新スキルコードを使えない
             return None
 
-        if "アラーム" in request_text:
+        if "アラーム" in prompt:
             self.log("try_get_answer", "\x1b[33m現在の言語モデルはアラーム機能をサポートしません。\x1b[0m")
             return "現在の言語モデルはアラーム機能をサポートしません。"
 
-    def delete_all(self):
+        return None
+
+    def delete_all(self) -> None:
         global_db.execute("DELETE FROM alarms", True)
 
-    def push_ts(self, ts):
+    def push_ts(self, ts: int) -> None:
         assert isinstance(ts, int)
         global_db.execute("INSERT INTO alarms (alarm_ts) VALUES ('{}')".format(str(ts)), True)
 
-    def try_get_answer_post_process(self, response):
-        if response.startswith("CALL_ALARM"):
-            args = response.split("\n")[0].split(" ")
+    def try_get_answer_post_process(self, response: str) -> Union[None, str]:
+        if not response.startswith("CALL_ALARM"):
+            return None
 
-            if args[1] == "delete_all":
-                self.delete_all()
-                return "設定されたアラームをすべて削除しました。"
+        args = response.split("\n")[0].split(" ")
 
-            self.log("try_get_answer_post_process", args[1])
+        if args[1] == "delete_all":
+            self.delete_all()
+            return "設定されたアラームをすべて削除しました。"
 
-            try:
-                dt = datetime.datetime.fromisoformat(args[1])
-            except Exception:
-                return "すみません。もう一度お願いします。"
+        self.log("try_get_answer_post_process", args[1])
 
-            self.push_ts(int(dt.timestamp()))
+        try:
+            dt = datetime.datetime.fromisoformat(args[1])
+        except Exception:
+            return "すみません。もう一度お願いします。"
 
-            return "{} にアラームを設定しました。".format(dt.strftime('%Y年%m月%d日 %H時%M分'))
+        self.push_ts(int(dt.timestamp()))
+
+        return "{} にアラームを設定しました。".format(dt.strftime('%Y年%m月%d日 %H時%M分'))
 
 # ==================================
 #       本クラスのテスト用処理
 # ==================================
 
 
-def module_test():
+def module_test() -> None:
     pass
 
 

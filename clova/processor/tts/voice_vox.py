@@ -3,6 +3,8 @@ import requests
 import json
 import time
 
+from typing import Union
+
 from clova.general.globals import global_config_prov
 
 from clova.processor.tts.base_tts import BaseTTSProvider
@@ -11,16 +13,16 @@ from clova.general.logger import BaseLogger
 
 
 class VoiceVoxTTSProvider(BaseTTSProvider, BaseLogger):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.web_voicevox_api_key = os.environ["WEB_VOICEVOX_API_KEY"]
         self.voicevox_custom_api_endpoint = os.environ["VOICEVOX_CUSTOM_API_ENDPOINT"]
 
-    def __del__(self):
+    def __del__(self) -> None:
         super().__del__()
 
-    def tts(self, text, **kwargs):
+    def tts(self, text: str, **kwargs: str) -> Union[None, bytes]:
         self.log("tts", "音声合成中(VoiceVox)")
 
         if self.voicevox_custom_api_endpoint != "":
@@ -44,7 +46,7 @@ class VoiceVoxTTSProvider(BaseTTSProvider, BaseLogger):
 
             if global_config_prov.verbose():
                 self.log("tts", "status = '{}'".format(res.status_code))
-                self.log("tts", "content = '{}'".format(res.content))
+                self.log("tts", "content = '{}'".format(res.content.decode()))
                 self.log("tts", "text = '{}'".format(res.text))
 
             if (res_json["success"]):
@@ -81,7 +83,7 @@ class VoiceVoxTTSProvider(BaseTTSProvider, BaseLogger):
 
         return None
 
-    def _tts_engine(self, text, **kwargs):
+    def _tts_engine(self, text: str, **kwargs: str) -> Union[None, bytes]:
         self.log("_tts_engine", "_tts_engineに自動移管")
 
         # impl of https://github.com/VOICEVOX/voicevox_engine/blob/master/README.md

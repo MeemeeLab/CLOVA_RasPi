@@ -7,12 +7,13 @@ import requests
 import urllib.parse
 import urllib.request
 
+from typing import Any, Union, Dict, List
+
 from clova.general.globals import global_speech_queue, global_config_prov
 
 from clova.processor.skill.base_skill import BaseSkillProvider
 from clova.general.logger import BaseLogger
 
-speech_queue = None
 # ==================================
 #           LINE受信クラス
 # ==================================
@@ -20,22 +21,20 @@ speech_queue = None
 
 class LineReceiver(BaseLogger):
     # コンストラクタ
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-        pass
-
     # デストラクタ
-    def __del__(self):
+    def __del__(self) -> None:
         super().__del__()
 
-    def conv_id_to_call_name(self, id):
+    def conv_id_to_call_name(self, id: str) -> str:
         # 未サポート（やり方調査中）
         self.log("conv_id_to_call_name", "ID:{} の名前を取得できませんでした。".format(self.json_data["events"][0]["message"]["id"]))
         return "誰か"
 
     # 受信時処理
-    def on_message_recv(self, body, query_data):
+    def on_message_recv(self, body: bytes, query_data: Dict[str, List[str]]) -> None:
         # 取得データを展開
         self.log("on_message_recv", "POST body=")
         self.log("on_message_recv", body)
@@ -78,20 +77,21 @@ class LineReceiver(BaseLogger):
 class LineSkillProvider(BaseSkillProvider, BaseLogger):
     POST_URL = "https://api.line.me/v2/bot/message/push"
     request_header = {"Content-Type": "application/json", "Authorization": "Bearer channel_access_token"}
-    request_body = {"to": "user ID", "messages": [{"type": "text", "text": "Message to send"}]}
+    # TODO: Make TypedDict for request_body; idk bout line
+    request_body: Any = {"to": "user ID", "messages": [{"type": "text", "text": "Message to send"}]}
 
     # コンストラクタ
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.ACCESS_TOKEN = os.environ["LINE_CH_ACC_TOKEN"]
 
     # デストラクタ
-    def __del__(self):
+    def __del__(self) -> None:
         super().__del__()
 
     # メッセージ送信
-    def send_message(self, to_id, message):
+    def send_message(self, to_id: str, message: str) -> None:
         # データをセット
         self.request_body["to"] = to_id
         self.request_body["messages"][0]["text"] = message
@@ -106,11 +106,11 @@ class LineSkillProvider(BaseSkillProvider, BaseLogger):
         # メッセージの送信
         requests.post(self.POST_URL, headers=self.request_header, json=self.request_body)
 
-    def conv_call_name_to_id(self, call_name):
+    def conv_call_name_to_id(self, call_name: str) -> str:
         found_id = ""
         default_id = ""
 
-        for id_inf in global_config_prov.get_general_config()["sns"]["line"]["user_id"]:
+        for id_inf in global_config_prov.get_user_config()["sns"]["line"]["user_id"]:
             if (id_inf["name"] == "default"):
                 default_id = id_inf["id"]
             elif (id_inf["call_name"] == call_name):
@@ -125,7 +125,7 @@ class LineSkillProvider(BaseSkillProvider, BaseLogger):
     def get_prompt_addition(self) -> str:
         return "LineSkillProvider: これはモバイルメッセンジャーアプリケーションの「LINE」を送信するスキルです。 フォーマット: `CALL_LINE [name] [message]`"
 
-    def try_get_answer(self, request_text, use_stub):
+    def try_get_answer(self, prompt: str, use_stub: bool, **kwarg: str) -> Union[None, str]:
         if not use_stub:
             # 新スキルコードをサポートしている場合、前処理しない
             # Bardはかなり頭が悪いので新スキルコードを使えない
@@ -133,14 +133,14 @@ class LineSkillProvider(BaseSkillProvider, BaseLogger):
 
         self.log("try_get_answer", "stub! expect unreliable response from skill")
 
-        if ((("LINE" in request_text) or ("ライン" in request_text)) and (("送信して" in request_text) or ("送って" in request_text) or ("して" in request_text))):
-            name_str = request_text.split("に")[0]
+        if ((("LINE" in prompt) or ("ライン" in prompt)) and (("送信して" in prompt) or ("送って" in prompt) or ("して" in prompt))):
+            name_str = prompt.split("に")[0]
 
             # 正規表現パターンを定義
             pattern = r"^(?P<name_str>.+?)[ ]*に[ ]*(?P<message>.+?)\s*([と|って]+[ ]*[ライン|LINE]+[ ]*[して|を送って|送って|送信して]+)[。]*$"
 
             # 正規表現によるマッチング
-            match = re.match(pattern, request_text)
+            match = re.match(pattern, prompt)
 
             if match:
                 # マッチした場合、name_str と Message 変数に格納
@@ -168,18 +168,20 @@ class LineSkillProvider(BaseSkillProvider, BaseLogger):
             self.log("try_get_answer", "No keyword for skill Line")
             return None
 
-    def try_get_answer_post_process(self, response):
-        if response.startswith("CALL_LINE"):
-            args = response.split("\n")[0].split(" ")
+    def try_get_answer_post_process(self, response: str) -> Union[None, str]:
+        if not response.startswith("CALL_LINE"):
+            return None
 
-            name_str = args[1]
-            message = args[2]
+        args = response.split("\n")[0].split(" ")
 
-            id = self.conv_call_name_to_id(name_str)
-            self.log("try_get_answer_post_process", "Send[LINE]>Id:{},Msg:{}".format(id, message))
-            self.send_message(id, message)
+        name_str = args[1]
+        message = args[2]
 
-            return "{} に {} とラインメッセージ送りました".format(name_str, message)
+        id = self.conv_call_name_to_id(name_str)
+        self.log("try_get_answer_post_process", "Send[LINE]>Id:{},Msg:{}".format(id, message))
+        self.send_message(id, message)
+
+        return "{} に {} とラインメッセージ送りました".format(name_str, message)
 
 # ==================================
 #      LINE HTTPハンドラクラス
@@ -189,8 +191,8 @@ class LineSkillProvider(BaseSkillProvider, BaseLogger):
 class HttpReqLineHandler(http.server.BaseHTTPRequestHandler):
     line_recv = LineReceiver()
 
-    def do_POST(self):
-        body = self.rfile.read(int(self.headers.get("Content-Length")))
+    def do_POST(self) -> None:
+        body = self.rfile.read(int(self.headers.get("Content-Length")))  # type: ignore[arg-type]
         query_data = urllib.parse.parse_qs(body.decode(encoding="utf8", errors="replace"))
 
         self.line_recv.on_message_recv(body, query_data)
@@ -200,10 +202,10 @@ class HttpReqLineHandler(http.server.BaseHTTPRequestHandler):
 # ==================================
 
 
-def module_test():
+def module_test() -> None:
     # APIキー類の読み込み
     sender = LineSkillProvider()
-    ret = sender.try_get_answer("クローバに おはようございます！ って LINE して。")
+    ret = sender.try_get_answer("クローバに おはようございます！ って LINE して。", True)
     print(ret)
 
 

@@ -1,22 +1,30 @@
 import json
 import http.server
+from socket import socket
+from socketserver import BaseServer
+
+from typing import Tuple, Union
 
 from urllib.parse import parse_qs
 
 from clova.general.globals import global_config_prov
 
+from clova.general.logger import BaseLogger
+
 # TODO: add support for changing apis
-# TODO: add support for checking requirements met before changing
+# TODO: add support for checking new config meets requirements before changing
 
 # ==================================
 #    Setting HTTPハンドラクラス
 # ==================================
 
 
-class HttpReqSettingHandler(http.server.BaseHTTPRequestHandler):
+class HttpReqSettingHandler(http.server.BaseHTTPRequestHandler, BaseLogger):
+    def __init__(self, request: Union[socket, Tuple[bytes, socket]], client_address: Tuple[str, int], server: BaseServer) -> None:
+        super().__init__(request, client_address, server)
 
     # GETリクエストを受け取った場合の処理
-    def do_GET(self):
+    def do_GET(self) -> None:
         # キャラクタの選択肢を作成する。
         with open("./assets/CLOVA_systems.json", "r", encoding="utf-8") as char_file:
             file_text = char_file.read()
@@ -35,7 +43,7 @@ class HttpReqSettingHandler(http.server.BaseHTTPRequestHandler):
 
         html = html.replace("{characterSelList}", char_selection)
 
-        sys_config = global_config_prov.get_general_config()
+        sys_config = global_config_prov.get_user_config()
 
         # 変数の値をHTMLに埋め込む
         html = html.replace("{DefaultCharSel}", str(sys_config["character"]))
@@ -55,13 +63,12 @@ class HttpReqSettingHandler(http.server.BaseHTTPRequestHandler):
         self.wfile.write(html.encode("utf-8"))
 
     # POSTリクエストを受け取った場合の処理
-    def do_POST(self):
-        sys_config = global_config_prov.get_general_config()
+    def do_POST(self) -> None:
+        sys_config = global_config_prov.get_user_config()
 
         # POSTデータを取得する
         content_length = int(self.headers["Content-Length"])
-        post_data = self.rfile.read(content_length)
-        post_data = post_data.decode("utf-8")
+        post_data = self.rfile.read(content_length).decode("utf-8")
 
         data = parse_qs(post_data)
 
@@ -84,7 +91,7 @@ class HttpReqSettingHandler(http.server.BaseHTTPRequestHandler):
         self.log("do_POST", "spk num_ch={}".format(sys_config["hardware"]["audio"]["speaker"]["num_ch"]))
         self.log("do_POST", "spk index={}".format(sys_config["hardware"]["audio"]["speaker"]["index"]))
 
-        global_config_prov.save_general_config_file(sys_config)
+        global_config_prov.commit_user_config(sys_config)
 
         # HTTPレスポンスを返す
         self.send_response(303)

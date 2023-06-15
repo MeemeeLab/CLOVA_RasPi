@@ -3,9 +3,11 @@ import pyaudio
 import threading
 import numpy as np
 import audioop
-import ffmpeg
+import ffmpeg  # type: ignore[import]
 
-from typing import Dict, Type
+from subprocess import Popen
+
+from typing import Dict, Type, List, Optional, IO
 
 from clova.general.globals import global_led_ill, global_config_prov, global_character_prov, global_vol, global_speech_queue, global_debug_interface
 
@@ -49,11 +51,11 @@ class VoiceController(BaseLogger):
     }
 
     # コンストラクタ
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         # 設定パラメータを読み込み
-        conf = global_config_prov.get_general_config()
+        conf = global_config_prov.get_user_config()
         self.mic_num_ch = conf["hardware"]["audio"]["microphone"]["num_ch"]
         self.mic_device_index = conf["hardware"]["audio"]["microphone"]["index"]
         self.silent_threshold = conf["hardware"]["audio"]["microphone"]["silent_thresh"]
@@ -68,29 +70,34 @@ class VoiceController(BaseLogger):
 
         self._update_system_conf()
 
-        self._wav_conversion_ffmpeg_waiting = None
-        self._interface_pending_message = []
+        self._wav_conversion_ffmpeg_waiting: Optional[Popen[bytes]] = None
+        self._interface_pending_message: List[str] = []
 
     # デストラクタ
-    def __del__(self):
+    def __del__(self) -> None:
         super().__del__()
 
-    def _update_system_conf(self):
+    def _update_system_conf(self) -> None:
         self.log("_update_system_conf", "called")
-        self.tts_system = global_config_prov.get_general_config()["apis"]["tts"]["system"] or global_character_prov.get_character_settings()["tts"]["system"]
-        self.stt_system = global_config_prov.get_general_config()["apis"]["stt"]["system"]
+        self._tts_system = global_config_prov.get_user_config()["apis"]["tts"]["system"] or global_character_prov.get_character_settings()["tts"]["system"]
+        self._stt_system = global_config_prov.get_user_config()["apis"]["stt"]["system"]
 
-        self.tts_kwargs = global_config_prov.get_general_config()["apis"]["tts"]["params"] or global_character_prov.get_character_settings()["tts"]["params"]
-        self.stt_kwargs = global_config_prov.get_general_config()["apis"]["stt"]["params"]
+        self._tts_kwargs = global_config_prov.get_user_config()["apis"]["tts"]["params"] or global_character_prov.get_character_settings()["tts"]["params"]
+        self._stt_kwargs = global_config_prov.get_user_config()["apis"]["stt"]["params"]
 
-        self.tts = self.TTS_MODULES[self.tts_system]()
-        self.stt = self.STT_MODULES[self.stt_system]()
+        assert isinstance(self._tts_system, str)
+        assert isinstance(self._stt_system, str)
+        assert isinstance(self._tts_kwargs, dict)
+        assert isinstance(self._stt_kwargs, dict)
 
-    def _interface_message(self, message):
+        self.tts = self.TTS_MODULES[self._tts_system]()
+        self.stt = self.STT_MODULES[self._stt_system]()
+
+    def _interface_message(self, message: str) -> None:
         self._interface_pending_message.append(message)
 
     # マイクからの録音
-    def microphone_record(self):
+    def microphone_record(self) -> Optional[bytes]:
         # 底面 LED を赤に
         global_led_ill.set_all(global_led_ill.RGB_RED)
 
@@ -205,24 +212,28 @@ class VoiceController(BaseLogger):
         return b"".join(rec_frames)
 
     # 音声からテキストに変換
-    def speech_to_text(self, audio):
+    def speech_to_text(self, audio: bytes) -> Optional[str]:
         # 底面 LED をオレンジに
         global_led_ill.set_all(global_led_ill.RGB_ORANGE)
 
         if len(audio) == 0:
             return None
 
-        return self.stt.stt(audio, **self.stt_kwargs)
+        assert isinstance(self._stt_kwargs, dict)
+
+        return self.stt.stt(audio, **self._stt_kwargs)
 
     # テキストから音声に変換
 
-    def text_to_speech(self, text):
+    def text_to_speech(self, text: str) -> Optional[bytes]:
         # 底面 LED を青に
         global_led_ill.set_all(global_led_ill.RGB_BLUE)
 
-        return self.tts.tts(text, **self.tts_kwargs)
+        assert isinstance(self._tts_kwargs, dict)
 
-    def _get_wav_info(self, wav_bytes):
+        return self.tts.tts(text, **self._tts_kwargs)
+
+    def _get_wav_info(self, wav_bytes: bytes) -> tuple[int, int, int]:
         # Read the required fields from the header
         channels = int.from_bytes(wav_bytes[22:24], 'little')
         sample_rate = int.from_bytes(wav_bytes[24:28], 'little')
@@ -230,7 +241,7 @@ class VoiceController(BaseLogger):
 
         return channels, sample_rate, width
 
-    def _launch_ffmpeg_cache(self):
+    def _launch_ffmpeg_cache(self) -> Popen[bytes]:
         input_stream = ffmpeg.input("pipe:", format="wav")
         output_stream = ffmpeg.output(
             input_stream.audio,
@@ -242,9 +253,9 @@ class VoiceController(BaseLogger):
         )
 
         self._wav_conversion_ffmpeg_waiting = output_stream.run_async(pipe_stdin=True, pipe_stdout=True)
-        return self._wav_conversion_ffmpeg_waiting
+        return self._wav_conversion_ffmpeg_waiting  # type: ignore[return-value]
 
-    def _handle_ffmpeg_output(self, pyaud, channels, stdout):
+    def _handle_ffmpeg_output(self, pyaud: pyaudio.PyAudio, channels: int, stdout: IO[bytes]) -> None:
         # 再生開始
         play_stream = None
 
@@ -258,19 +269,19 @@ class VoiceController(BaseLogger):
                 play_stream = pyaud.open(format=SPEECH_FORMAT, channels=channels, rate=44100, output=True, output_device_index=self.speaker_device_index)
                 play_stream.start_stream()
 
-            data = np.frombuffer(data, dtype=np.int16) * global_vol.vol_value  # ボリューム倍率を更新
-            data = data.astype(np.int16)
-            play_stream.write(data.tobytes())
+            nd = (np.frombuffer(data, dtype=np.int16) * global_vol.vol_value).astype(np.int16)  # ボリューム倍率を更新
+            play_stream.write(nd.tobytes())
 
         # 再生終了処理
-        play_stream.stop_stream()
-        while play_stream.is_active():
-            time.sleep(0.1)
-        play_stream.close()
+        if play_stream is not None:
+            play_stream.stop_stream()
+            while play_stream.is_active():
+                time.sleep(0.1)
+            play_stream.close()
         self.log("_handle_ffmpeg_output", "Play done!")
 
     # 音声ファイルの再生
-    def play_audio(self, audio):
+    def play_audio(self, audio: bytes) -> None:
         # 底面 LED を水に
         global_led_ill.set_all(global_led_ill.RGB_CYAN)
 
@@ -317,7 +328,7 @@ class VoiceController(BaseLogger):
 # ==================================
 
 
-def module_test():
+def module_test() -> None:
     # 現状何もしない
     pass
 

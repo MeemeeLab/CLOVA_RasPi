@@ -1,5 +1,5 @@
 import datetime
-from typing import Dict, Tuple, Type
+from typing import Dict, Union, Type, List, Callable
 
 from clova.processor.conversation.base_conversation import BaseConversationProvider
 from clova.processor.conversation.chatgpt import OpenAIChatGPTConversationProvider
@@ -28,36 +28,32 @@ class ConversationController(BaseLogger):
         "OpenAI-ChatGPT": OpenAIChatGPTConversationProvider,
         "Bard": BardConversationProvider
     }
-    SKILL_MODULES: Tuple[BaseSkillProvider] = [
+    SKILL_MODULES: List[BaseSkillProvider] = [
         TimerSkillProvider(), NewsSkillProvider(), WeatherSkillProvider(), LineSkillProvider(),
         DateTimeSkillProvider(), MusicSkillProvider(), AlarmSkillProvider()
     ]
 
     # コンストラクタ
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-        self.system = global_config_prov.get_general_config()["apis"]["conversation"]["system"]
+        self.system = global_config_prov.get_user_config()["apis"]["conversation"]["system"]
+        assert self.system, "Conversation system must be specified"
         self.provider = self.CONVERSATION_MODULES[self.system]()
 
     # デストラクタ
-    def __del__(self):
+    def __del__(self) -> None:
         super().__del__()
 
     # 音声以外での待ち処理
-    def check_for_interrupted_voice(self):
-        ret = False
-        speech_text = ""
-
+    def check_for_interrupted_voice(self) -> Union[None, Union[str, Callable[[], None]]]:
         if (len(global_speech_queue) != 0):
-            speech_text = global_speech_queue.get()
-            print(speech_text)
-            ret = True
+            return global_speech_queue.get()
 
-        return ret, speech_text
+        return None
 
     # 問いかけに答える
-    def get_answer(self, prompt):
+    def get_answer(self, prompt: str) -> str:
         # 無言なら無応答
         if (prompt == ""):
             return ""
@@ -73,7 +69,7 @@ class ConversationController(BaseLogger):
                 return result
 
         # どれにも該当しないときには AI に任せる。
-        kwargs = global_config_prov.get_general_config()["apis"]["conversation"]["params"]
+        kwargs = global_config_prov.get_user_config()["apis"]["conversation"]["params"] or {}
 
         if self.provider.supports_prompt_skill():
             actual_prompt = global_character_prov.get_character_prompt() + "\n" + GLOBAL_CHARACTER_CONFIG_PROMPT + "\n"
@@ -107,7 +103,7 @@ class ConversationController(BaseLogger):
 # ==================================
 
 
-def module_test():
+def module_test() -> None:
     # 現状何もしない
     pass
 
