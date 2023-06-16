@@ -6,7 +6,7 @@ import os
 import threading
 import time
 
-from typing import IO, Union
+from typing import IO, Optional
 
 from clova.general.globals import global_vol, global_speech_queue, global_config_prov
 
@@ -140,7 +140,7 @@ class MusicSkillProvider(BaseSkillProvider, BaseLogger):
             pass
 
     # 日時 質問に答える。日時の問い合わせではなければ None を返す
-    def try_get_answer(self, prompt: str, use_stub: bool, **kwarg: str) -> Union[None, str]:
+    def try_get_answer(self, prompt: str, use_stub: bool, **kwarg: str) -> Optional[str]:
         if not use_stub:
             # 新スキルコードをサポートしている場合、前処理しない
             # Bardはかなり頭が悪いので新スキルコードを使えない
@@ -156,7 +156,7 @@ class MusicSkillProvider(BaseSkillProvider, BaseLogger):
         # 該当がない場合は空で返信
         return None
 
-    def try_get_answer_post_process(self, response: str) -> Union[None, str]:
+    def try_get_answer_post_process(self, response: str) -> Optional[str]:
         if not response.startswith("CALL_MUSIC"):
             return None
 

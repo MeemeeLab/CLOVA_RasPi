@@ -2,7 +2,7 @@ import re
 import requests
 import datetime
 
-from typing import Union
+from typing import Optional
 
 from clova.general.globals import global_config_prov
 
@@ -100,7 +100,7 @@ class WeatherSkillProvider(BaseSkillProvider, BaseLogger):
         return "WeatherSkillProvider: これは天気を返答するスキルです。 フォーマット: `CALL_TIMER [area_kanji] [today|tomorrow]`"
 
     # 天気 質問に答える。天気の問い合わせではなければ None を返す
-    def try_get_answer(self, prompt: str, use_stub: bool, **kwarg: str) -> Union[None, str]:
+    def try_get_answer(self, prompt: str, use_stub: bool, **kwarg: str) -> Optional[str]:
         if not use_stub:
             # 新スキルコードをサポートしている場合、前処理しない
             # Bardはかなり頭が悪いので新スキルコードを使えない
@@ -168,7 +168,7 @@ class WeatherSkillProvider(BaseSkillProvider, BaseLogger):
         self.log("try_get_answer", answer_text)
         return answer_text
 
-    def try_get_answer_post_process(self, response: str) -> Union[None, str]:
+    def try_get_answer_post_process(self, response: str) -> Optional[str]:
         if not response.startswith("CALL_WEATHER"):
             return None
 

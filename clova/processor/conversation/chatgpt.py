@@ -1,7 +1,7 @@
 import os
 import openai
 
-from typing import Union
+from typing import Optional
 
 from clova.general.globals import global_config_prov
 
@@ -34,7 +34,7 @@ class OpenAIChatGPTConversationProvider(BaseConversationProvider, BaseLogger):
     def supports_prompt_skill(self) -> bool:
         return True
 
-    def get_answer(self, prompt: str, **kwargs: str) -> Union[None, str]:
+    def get_answer(self, prompt: str, **kwargs: str) -> Optional[str]:
         openai.api_key = self.OPENAI_API_KEY
 
         self.log("get_answer", "OpenAI 応答作成中")

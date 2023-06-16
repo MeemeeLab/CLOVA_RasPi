@@ -1,6 +1,6 @@
 from google.cloud import texttospeech as tts
 
-from typing import Union
+from typing import Optional
 
 from clova.processor.tts.base_tts import BaseTTSProvider
 
@@ -24,7 +24,7 @@ class GoogleTextToSpeechTTSProvider(BaseTTSProvider, BaseLogger):
     def __del__(self) -> None:
         super().__del__()
 
-    def tts(self, text: str, **kwargs: str) -> Union[None, bytes]:
+    def tts(self, text: str, **kwargs: str) -> Optional[bytes]:
         self.log("tts", "音声合成中(Google TTS)")
 
         # テキスト入力

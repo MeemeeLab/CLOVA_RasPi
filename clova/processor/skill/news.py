@@ -2,7 +2,7 @@ import re
 import requests
 import time
 
-from typing import Union
+from typing import Optional
 
 from bs4 import BeautifulSoup
 
@@ -48,7 +48,7 @@ class NewsSkillProvider(BaseSkillProvider, BaseLogger):
         return "NewsSkillProvider: これは最新のニュースを返答するスキルです。 フォーマット: `CALL_NEWS <トップ|国内|国際|ビジネス|エンタメ|スポーツ|科学|地域|コンピュータ|インターネット|社会>`"
 
     # ニュース 質問に答える。ニュースの問い合わせではなければ None を返す
-    def try_get_answer(self, prompt: str, use_stub: bool, **kwarg: str) -> Union[None, str]:
+    def try_get_answer(self, prompt: str, use_stub: bool, **kwarg: str) -> Optional[str]:
         # 前回がニュースで無ければ
         if (self._news_count == 0):
             if not use_stub:
@@ -143,7 +143,7 @@ class NewsSkillProvider(BaseSkillProvider, BaseLogger):
 
         return news_headlines
 
-    def try_get_answer_post_process(self, response: str) -> Union[None, str]:
+    def try_get_answer_post_process(self, response: str) -> Optional[str]:
         if not response.startswith("CALL_NEWS"):
             return None
 

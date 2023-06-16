@@ -1,7 +1,7 @@
 import os
 import requests
 
-from typing import Union
+from typing import Optional
 
 from clova.general.logger import BaseLogger
 
@@ -18,7 +18,7 @@ class AITalkTTSProvider(BaseTTSProvider, BaseLogger):
     def __del__(self) -> None:
         super().__del__()
 
-    def tts(self, text: str, **kwargs: str) -> Union[None, bytes]:
+    def tts(self, text: str, **kwargs: str) -> Optional[bytes]:
         self.log("tts", "音声合成中(AITalk)")
 
         # 音声合成設定

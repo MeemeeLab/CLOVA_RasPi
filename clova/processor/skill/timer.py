@@ -3,7 +3,7 @@ import time
 import datetime
 import re
 
-from typing import Union
+from typing import Optional
 
 from clova.general.globals import global_speech_queue
 
@@ -75,7 +75,7 @@ class TimerSkillProvider(BaseSkillProvider, BaseLogger):
                 # self.Stop()
 
     # タイマーの 要求に答える。タイマーの要求ではなければ None を返す
-    def try_get_answer(self, prompt: str, use_stub: bool, **kwarg: str) -> Union[None, str]:
+    def try_get_answer(self, prompt: str, use_stub: bool, **kwarg: str) -> Optional[str]:
         if (not self._is_alarm_on):
             if not use_stub:
                 # 新スキルコードをサポートしている場合、前処理しない
@@ -116,7 +116,7 @@ class TimerSkillProvider(BaseSkillProvider, BaseLogger):
                 self.log("try_get_answer", answer_text)
                 return answer_text
 
-    def try_get_answer_post_process(self, response: str) -> Union[None, str]:
+    def try_get_answer_post_process(self, response: str) -> Optional[str]:
         if not response.startswith("CALL_TIMER"):
             return None
 

@@ -1,6 +1,6 @@
 import datetime
 
-from typing import Union
+from typing import Optional
 
 from clova.processor.skill.base_skill import BaseSkillProvider
 
@@ -26,7 +26,7 @@ class DateTimeSkillProvider(BaseSkillProvider, BaseLogger):
         return "DateTimeSkillProvider: これは今日の日付を応答するスキルです。 フォーマット: `CALL_DATETIME [date|time]`"
 
     # 日時 質問に答える。日時の問い合わせではなければ None を返す
-    def try_get_answer(self, prompt: str, use_stub: bool, **kwarg: str) -> Union[None, str]:
+    def try_get_answer(self, prompt: str, use_stub: bool, **kwarg: str) -> Optional[str]:
         if not use_stub:
             # 新スキルコードをサポートしている場合、前処理しない
             # Bardはかなり頭が悪いので新スキルコードを使えない
@@ -52,7 +52,7 @@ class DateTimeSkillProvider(BaseSkillProvider, BaseLogger):
         # 該当がない場合は空で返信
         return None
 
-    def try_get_answer_post_process(self, response: str) -> Union[None, str]:
+    def try_get_answer_post_process(self, response: str) -> Optional[str]:
         if not response.startswith("CALL_DATETIME"):
             return None
 

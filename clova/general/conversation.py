@@ -1,5 +1,5 @@
 import datetime
-from typing import Dict, Union, Type, List, Callable
+from typing import Dict, Union, Type, List, Callable, Optional
 
 from clova.processor.conversation.base_conversation import BaseConversationProvider
 from clova.processor.conversation.chatgpt import OpenAIChatGPTConversationProvider
@@ -46,7 +46,7 @@ class ConversationController(BaseLogger):
         super().__del__()
 
     # 音声以外での待ち処理
-    def check_for_interrupted_voice(self) -> Union[None, Union[str, Callable[[], None]]]:
+    def check_for_interrupted_voice(self) -> Optional[Union[str, Callable[[], None]]]:
         if (len(global_speech_queue) != 0):
             return global_speech_queue.get()
 

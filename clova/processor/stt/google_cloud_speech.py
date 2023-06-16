@@ -1,6 +1,6 @@
 from google.cloud import speech_v1p1beta1 as speech
 
-from typing import Union
+from typing import Optional
 
 from clova.general.globals import global_config_prov
 
@@ -20,7 +20,7 @@ class GoogleCloudSpeechSTTProvider(BaseSTTProvider, BaseLogger):
     def __del__(self) -> None:
         super().__del__()
 
-    def stt(self, audio: bytes, **kwargs: str) -> Union[None, str]:
+    def stt(self, audio: bytes, **kwargs: str) -> Optional[str]:
         self.log("stt", "音声からテキストに変換中(Google Cloud Speech)")
 
         # Speech-to-Text の認識設定

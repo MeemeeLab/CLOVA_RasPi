@@ -1,7 +1,7 @@
 import threading as th
 import datetime
 
-from typing import Union
+from typing import Optional
 
 from clova.general.globals import global_speech_queue, global_db
 
@@ -75,7 +75,7 @@ class AlarmSkillProvider(BaseSkillProvider, BaseLogger):
         global_speech_queue.add(self.alarm)
 
     # タイマーの 要求に答える。タイマーの要求ではなければ None を返す
-    def try_get_answer(self, prompt: str, use_stub: bool, **kwarg: str) -> Union[None, str]:
+    def try_get_answer(self, prompt: str, use_stub: bool, **kwarg: str) -> Optional[str]:
         if not use_stub:
             # 新スキルコードをサポートしている場合、前処理しない
             # Bardはかなり頭が悪いので新スキルコードを使えない
@@ -94,7 +94,7 @@ class AlarmSkillProvider(BaseSkillProvider, BaseLogger):
         assert isinstance(ts, int)
         global_db.execute("INSERT INTO alarms (alarm_ts) VALUES ('{}')".format(str(ts)), True)
 
-    def try_get_answer_post_process(self, response: str) -> Union[None, str]:
+    def try_get_answer_post_process(self, response: str) -> Optional[str]:
         if not response.startswith("CALL_ALARM"):
             return None
 

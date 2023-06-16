@@ -3,7 +3,7 @@ import requests
 import json
 import time
 
-from typing import Union
+from typing import Optional
 
 from clova.general.globals import global_config_prov
 
@@ -22,7 +22,7 @@ class VoiceVoxTTSProvider(BaseTTSProvider, BaseLogger):
     def __del__(self) -> None:
         super().__del__()
 
-    def tts(self, text: str, **kwargs: str) -> Union[None, bytes]:
+    def tts(self, text: str, **kwargs: str) -> Optional[bytes]:
         self.log("tts", "音声合成中(VoiceVox)")
 
         if self.voicevox_custom_api_endpoint != "":
@@ -83,7 +83,7 @@ class VoiceVoxTTSProvider(BaseTTSProvider, BaseLogger):
 
         return None
 
-    def _tts_engine(self, text: str, **kwargs: str) -> Union[None, bytes]:
+    def _tts_engine(self, text: str, **kwargs: str) -> Optional[bytes]:
         self.log("_tts_engine", "_tts_engineに自動移管")
 
         # impl of https://github.com/VOICEVOX/voicevox_engine/blob/master/README.md

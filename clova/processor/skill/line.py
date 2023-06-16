@@ -7,7 +7,7 @@ import requests
 import urllib.parse
 import urllib.request
 
-from typing import Any, Union, Dict, List
+from typing import Any, Optional, Dict, List
 
 from clova.general.globals import global_speech_queue, global_config_prov
 
@@ -125,7 +125,7 @@ class LineSkillProvider(BaseSkillProvider, BaseLogger):
     def get_prompt_addition(self) -> str:
         return "LineSkillProvider: これはモバイルメッセンジャーアプリケーションの「LINE」を送信するスキルです。 フォーマット: `CALL_LINE [name] [message]`"
 
-    def try_get_answer(self, prompt: str, use_stub: bool, **kwarg: str) -> Union[None, str]:
+    def try_get_answer(self, prompt: str, use_stub: bool, **kwarg: str) -> Optional[str]:
         if not use_stub:
             # 新スキルコードをサポートしている場合、前処理しない
             # Bardはかなり頭が悪いので新スキルコードを使えない
@@ -168,7 +168,7 @@ class LineSkillProvider(BaseSkillProvider, BaseLogger):
             self.log("try_get_answer", "No keyword for skill Line")
             return None
 
-    def try_get_answer_post_process(self, response: str) -> Union[None, str]:
+    def try_get_answer_post_process(self, response: str) -> Optional[str]:
         if not response.startswith("CALL_LINE"):
             return None
 
