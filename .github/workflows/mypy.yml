@@ -1,11 +1,6 @@
 name: Lint
 
-on:
-  push:
-    paths:
-      - '*.py'
-      - '.github/workflows/**'
-      - 'requirements.ci.txt'
+on: [push]
 
 jobs:
   mypy:
