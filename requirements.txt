@@ -10,6 +10,7 @@ python-dotenv
 git+https://github.com/dsdanielpark/Bard-API
 regex
 websockets
+yt_dlp
 
 types-pyaudio
 types-regex
